@@ -6,6 +6,7 @@
 
 // Dialog Stuff
 //#include "CustFuncPicker.h"
+#include "resource.h"
 
 #ifndef NOMINMAX // Kill windows' horrible min() and max() macros
 #define NOMINMAX
@@ -50,13 +51,14 @@ char * CFErrorMessageTable[NUMBER_OF_ERRORS] =
 bool ctrlDown = false;
 bool shiftDown = false;
 bool bhooked = false;
-bool cfDebug = true;
+bool cfDebug = false;
 static BOOL MC_Active = FALSE;    // TODO: Start off as TRUE since Mathcad is active when DLL Loads?
 static char text[TEXTLENGTH];
 int  nVirtKey;
 
 HHOOK hhk;
-HHOOK hhookMsg;
+// HHOOK hhookMsg;
+HINSTANCE hDLLglobal = 0;
 /*******************************************************************************************************/
 /*   This was an initial attempt from an internet example.  It is not used and can probably go.        */
 /*******************************************************************************************************/
@@ -80,9 +82,13 @@ LRESULT CALLBACK CBTProc(int nCode, WPARAM wParam, LPARAM lParam)
     return CallNextHookEx(hhookMsg, nCode, wParam, lParam);
 }
 */
+INT_PTR CALLBACK AboutDlgProc(HWND, UINT, WPARAM, LPARAM);
+INT_PTR CALLBACK CFDlgProc(HWND, UINT, WPARAM, LPARAM);
 
 LRESULT CALLBACK LowLevelKeyboardProc(int nCode, WPARAM wParam, LPARAM lParam)
 {
+ //   static HINSTANCE hInstance;
+
     if ( nCode == HC_ACTION ) {  // Only process if nCode == HC_ACTION (0) == change in keyboard key state
         PKBDLLHOOKSTRUCT hookStruct = (PKBDLLHOOKSTRUCT) lParam;
         // Check if any key was pressed - KEYDOWN
@@ -93,7 +99,7 @@ LRESULT CALLBACK LowLevelKeyboardProc(int nCode, WPARAM wParam, LPARAM lParam)
                 HWND hwnd = GetForegroundWindow();                     // get handle of currently active window
                 GetWindowText(hwnd, wnd_title, sizeof(wnd_title));     // get title of the window
                 char *ptcFound = NULL;
-                ptcFound = std::strstr(wnd_title, "PTC Mathcad Prime");              // See if active window starts with "PTC"
+                ptcFound = std::strstr(wnd_title, "PTC Mathcad Prime");              // See if active window starts with "PTC Mathcad Prime"
                 if (ptcFound) {                                        // If yes...
                     // Only if Mathcad Window is active, Pop dialog here.
                     if (cfDebug)
@@ -104,11 +110,130 @@ LRESULT CALLBACK LowLevelKeyboardProc(int nCode, WPARAM wParam, LPARAM lParam)
                         MessageBox(hwndDlg, msg.c_str(), "CustFunc Add-In", 0);   // Open Message box with msg
                     }
                     // TODO: If Mathcad Window is active, Pop Custom Function Dialog Box here.
+                    
+                    DialogBox(hDLLglobal, MAKEINTRESOURCE(IDD_CFDIALOG), hwnd, CFDlgProc);
                 }
             }
         }
     }
     return CallNextHookEx(hhk, nCode, wParam, lParam);
+}
+
+INT_PTR CALLBACK AboutDlgProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
+{
+    /**/
+    HWND hwndOwner;
+    RECT rc, rcDlg, rcOwner;
+    /**/
+
+    switch (message)
+    {
+    case WM_INITDIALOG :
+        /**/
+        hwndOwner = GetParent(hDlg);
+
+        GetWindowRect(hwndOwner, &rcOwner);
+        GetWindowRect(hDlg, &rcDlg);
+        CopyRect(&rc, &rcOwner);
+
+        // Offset the owner and dialog box rectangles so that right and bottom 
+        // values represent the width and height, and then offset the owner again 
+        // to discard space taken up by the dialog box. 
+
+        OffsetRect(&rcDlg, -rcDlg.left, -rcDlg.top);
+        OffsetRect(&rc, -rc.left, -rc.top);
+        OffsetRect(&rc, -rcDlg.right, -rcDlg.bottom);
+
+        // The new position is the sum of half the remaining space and the owner's 
+        // original position. 
+
+        SetWindowPos(hDlg,
+            HWND_TOP,
+            rcOwner.left + (rc.right / 2),
+            rcOwner.top + (rc.bottom / 2),
+            0, 0,          // Ignores size arguments. 
+            SWP_NOSIZE);
+
+        /*
+        if (GetDlgCtrlID((HWND)wParam) != IDD_ABOUTBOX)
+        {
+            SetFocus(GetDlgItem(hDlg, IDD_ABOUTBOX));
+            return FALSE;
+        }
+        */
+
+        return TRUE;
+
+    case WM_COMMAND :
+        switch (LOWORD(wParam))
+        {
+        case IDOK :
+            EndDialog(hDlg, 1);
+            return TRUE;
+        }
+
+        break;
+    }
+    return FALSE;
+}
+
+INT_PTR CALLBACK CFDlgProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
+{
+    /**/
+    HWND hwndOwner;
+    RECT rc, rcDlg, rcOwner;
+    /**/
+
+    switch (message)
+    {
+    case WM_INITDIALOG:
+        /**/
+        hwndOwner = GetParent(hDlg);
+
+        GetWindowRect(hwndOwner, &rcOwner);
+        GetWindowRect(hDlg, &rcDlg);
+        CopyRect(&rc, &rcOwner);
+
+        // Offset the owner and dialog box rectangles so that right and bottom 
+        // values represent the width and height, and then offset the owner again 
+        // to discard space taken up by the dialog box. 
+
+        OffsetRect(&rcDlg, -rcDlg.left, -rcDlg.top);
+        OffsetRect(&rc, -rc.left, -rc.top);
+        OffsetRect(&rc, -rcDlg.right, -rcDlg.bottom);
+
+        // The new position is the sum of half the remaining space and the owner's 
+        // original position. 
+
+        SetWindowPos(hDlg,
+            HWND_TOP,
+            rcOwner.left + (rc.right / 2),
+            rcOwner.top + (rc.bottom / 2),
+            0, 0,          // Ignores size arguments. 
+            SWP_NOSIZE);
+
+        /*
+        if (GetDlgCtrlID((HWND)wParam) != IDD_ABOUTBOX)
+        {
+            SetFocus(GetDlgItem(hDlg, IDD_ABOUTBOX));
+            return FALSE;
+        }
+        */
+
+        return TRUE;
+
+    case WM_COMMAND:
+        switch (LOWORD(wParam))
+        {
+        case IDINSERT:
+        case IDCANCEL:
+            EndDialog(hDlg, 1);
+            return TRUE;
+        }
+
+        break;
+    }
+    return FALSE;
 }
 
 // This code loads/removes the DLL and installed keyboard hooks  
@@ -132,6 +257,8 @@ extern "C" BOOL WINAPI  DllEntryPoint (HINSTANCE hDLL, DWORD dwReason, LPVOID lp
            //
             // DLL is attaching to the address space of the current process.
             //
+            hDLLglobal = hDLL;
+
             if (!_CRT_INIT(hDLL, dwReason, lpReserved))
             {
                 return FALSE;
