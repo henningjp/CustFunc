@@ -17,6 +17,9 @@
     <ClCompile Include="..\src\CustFunc.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\src\tinyxml2.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="..\resource\CustFunc.rc">
@@ -25,6 +28,12 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\includes\resource.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\includes\tinyxml2.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\resource\resource.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

@@ -123,12 +123,15 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="..\src\CustFunc.cpp" />
+    <ClCompile Include="..\src\tinyxml2.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="..\resource\CustFunc.rc" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\includes\resource.h" />
+    <ClInclude Include="..\includes\tinyxml2.h" />
+    <ClInclude Include="..\resource\resource.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
