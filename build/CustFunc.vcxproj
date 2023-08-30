@@ -131,7 +131,6 @@
   <ItemGroup>
     <ClInclude Include="..\includes\resource.h" />
     <ClInclude Include="..\includes\tinyxml2.h" />
-    <ClInclude Include="..\resource\resource.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
