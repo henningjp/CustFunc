@@ -55,7 +55,7 @@ bool bhooked = false;
 bool cfDebug = false;
 bool fileDebug = true;
 static BOOL MC_Active = FALSE;    // TODO: Start off as TRUE since Mathcad is active when DLL Loads?
-static char text[TEXTLENGTH];
+//static wchar_t text[TEXTLENGTH];
 int  nVirtKey;
 int iCategory;
 int iFunction;
@@ -66,17 +66,17 @@ int iFunction;
 
 typedef struct
 {
-    std::string Name;
-    std::string LocalName;
-    std::string Params;
-    std::string Description;
+    std::wstring Name;
+    std::wstring LocalName;
+    std::wstring Params;
+    std::wstring Description;
 } FuncDef;
 
 typedef std::vector<FuncDef> FuncVec;
 
 typedef struct
 {
-    std::string CatName;
+    std::wstring CatName;
     FuncVec Functions;
 } Category;
 
@@ -91,7 +91,7 @@ HINSTANCE hDLLglobal = 0;
 
 
 //Function Templates
-BOOL LoadDocs();    // Get DLL directory and the \docs diretory underneith it
+BOOL LoadDocs();    // Get DLL directory and the \docs directory underneath it
 INT_PTR CALLBACK AboutDlgProc(HWND, UINT, WPARAM, LPARAM);
 INT_PTR CALLBACK CFDlgProc(HWND, UINT, WPARAM, LPARAM);
 
@@ -110,32 +110,35 @@ LRESULT CALLBACK LowLevelKeyboardProc(int nCode, WPARAM wParam, LPARAM lParam)
     if ( nCode == HC_ACTION ) {  // Only process if nCode == HC_ACTION (0) == change in keyboard key state
         PKBDLLHOOKSTRUCT hookStruct = (PKBDLLHOOKSTRUCT) lParam;
         // Check if any key was pressed - KEYDOWN
-        if (wParam == WM_SYSKEYDOWN || wParam == WM_KEYDOWN) {
-            // Check if F2 pressed and <Shift> key is also down; gets shift key state on the fly.
-            if (hookStruct->vkCode == VK_F2 && (GetKeyState(VK_SHIFT) & SHIFTED)) {
-                char wnd_title[256];
-                HWND hwnd = GetForegroundWindow();                     // get handle of currently active window
-                GetWindowText(hwnd, wnd_title, sizeof(wnd_title));     // get title of the window
-                char *ptcFound = NULL;
-                ptcFound = std::strstr(wnd_title, "PTC Mathcad Prime");              // See if active window starts with "PTC Mathcad Prime"
-                if (ptcFound) {                                        // If yes...
-                    // Only if Mathcad Window is active, Pop dialog here.
-                    if (cfDebug)
-                    {
-                        std::string msg;
-                        msg = "<Shift>-F2 was pressed.\n\n WindowClassName = ";
-                        msg.append(wnd_title);                                    // append full title to Message
-                        MessageBox(hwndDlg, msg.c_str(), "CustFunc Add-In", 0);   // Open Message box with msg
-                    }
-                    // If Mathcad Window is active, Pop Custom Function Dialog Box here.
-                    
-                    DialogBox(hDLLglobal, MAKEINTRESOURCE(IDD_CFDIALOG), hwnd, CFDlgProc);
-
-                    // TODO: we can pass the function string to Mathcad from within the Dialog Box, or
-                    //       we can return an index value from the the DialogBox and send the call
-                    //       to Mathcad here.  However, the DialogBox may be non-modal, so we might
-                    //       need to pass the info from within the Dialog Process (CFDlgProc).
+        if (wParam == WM_SYSKEYDOWN || wParam == WM_KEYDOWN)
+        {
+            wchar_t * wnd_title = nullptr;
+            wchar_t * ptcFound = NULL;
+            HWND hwnd = GetForegroundWindow();                       // get handle of currently active window
+            DWORD cTextLen = GetWindowTextLength(hwnd);              // get length of window title string
+            if (cTextLen > 0)
+            {
+                // Allocate memory for the string and compy the string into memory
+                wnd_title = (PWSTR)VirtualAlloc((LPVOID)NULL, (DWORD)(cTextLen + 1), MEM_COMMIT, PAGE_READWRITE);
+                if (wnd_title != NULL)                               // IF wnd_title not null,
+                {
+                    GetWindowText(hwnd, wnd_title, cTextLen + 1);    //     get title of the window: was size sizeof(wnd_title)
+                    ptcFound = std::wcsstr(wnd_title, L"PTC Mathcad Prime"); // See if active window starts with "PTC Mathcad Prime"
                 }
+                else
+                    wnd_title = L"<no title>";
+            }
+            if (ptcFound) {                                          // If yes (not NULL)...
+                // Only if Mathcad Window is active, process keystrokes
+                // If Mathcad Window is active, Pop Custom Function Dialog Box here.
+                    
+                // Check if F2 pressed and <Shift> key is also down; gets shift key state on the fly.
+                if (hookStruct->vkCode == VK_F2 && (GetKeyState(VK_SHIFT) & SHIFTED)) {
+                    DialogBox(hDLLglobal, MAKEINTRESOURCE(IDD_CFDIALOG), hwnd, CFDlgProc);
+                }
+
+                // TODO: Check if <Ctrl><Shift>F was pressed to insert "°F" at Mathcad Cursor Location
+                // TODO: Check if <Ctrl><Shift>C was pressed to insert "°C" at Mathcad Cursor Location
             }
         }
     }
@@ -267,12 +270,12 @@ INT_PTR CALLBACK CFDlgProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
         iFunction = (int)SendMessage(hwndFList, LB_GETITEMDATA, 0, 0);
 
          //Set Text for the Function Call Edit Control (IDC_EDITFUNC) to the first function call string
-        std::string tLocal = CatVec[iCategory].Functions[iFunction].LocalName;
-        tLocal.append("(").append(CatVec[iCategory].Functions[iFunction].Params).append(")");
-        SetWindowText(GetDlgItem(hDlg, IDC_EDITFUNC), (LPCSTR)tLocal.c_str());
+        std::wstring tLocal = CatVec[iCategory].Functions[iFunction].LocalName;
+        tLocal.append(L"(").append(CatVec[iCategory].Functions[iFunction].Params).append(L")");
+        SetWindowText(GetDlgItem(hDlg, IDC_EDITFUNC), (LPCWSTR)tLocal.c_str());
 
-       //Set Text for the Descritption Edit Control (IDC_EDITDESC) to the first function description string
-        SetWindowText(GetDlgItem(hDlg, IDC_EDITDESC), (LPCSTR)CatVec[iCategory].Functions[iFunction].Description.c_str());
+       //Set Text for the Description Edit Control (IDC_EDITDESC) to the first function description string
+        SetWindowText(GetDlgItem(hDlg, IDC_EDITDESC), (LPCWSTR)CatVec[iCategory].Functions[iFunction].Description.c_str());
 
         // Set input focus to the Category List Box
         SetFocus(hwndCList);
@@ -302,12 +305,12 @@ INT_PTR CALLBACK CFDlgProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
                 iFunction = (int)SendMessage(hwndFList, LB_GETITEMDATA, 0, 0);
 
                 //Set Text for the Function Call Edit Control (IDC_EDITFUNC) to the first function call string
-                std::string tLocal = CatVec[iCategory].Functions[iFunction].LocalName;
-                tLocal.append("(").append(CatVec[iCategory].Functions[iFunction].Params).append(")");
-                SetWindowText(GetDlgItem(hDlg, IDC_EDITFUNC), (LPCSTR)tLocal.c_str());
+                std::wstring tLocal = CatVec[iCategory].Functions[iFunction].LocalName;
+                tLocal.append(L"(").append(CatVec[iCategory].Functions[iFunction].Params).append(L")");
+                SetWindowText(GetDlgItem(hDlg, IDC_EDITFUNC), (LPCWSTR)tLocal.c_str());
 
-                //Set Text for the Descritption Edit Control (IDC_EDITDESC) to the first function description string
-                SetWindowText(GetDlgItem(hDlg, IDC_EDITDESC), (LPCSTR)CatVec[iCategory].Functions[iFunction].Description.c_str());
+                //Set Text for the Description Edit Control (IDC_EDITDESC) to the first function description string
+                SetWindowText(GetDlgItem(hDlg, IDC_EDITDESC), (LPCWSTR)CatVec[iCategory].Functions[iFunction].Description.c_str());
 
                 // Set input focus to the Category List Box
                 SetFocus(GetDlgItem(hDlg, IDC_LISTCAT));
@@ -321,10 +324,10 @@ INT_PTR CALLBACK CFDlgProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
                 iFindex = (int)SendMessage(GetDlgItem(hDlg, IDC_LISTFUNC), LB_GETCURSEL, 0, 0);
                 int iFunction = (int)SendMessage(GetDlgItem(hDlg, IDC_LISTFUNC), LB_GETITEMDATA, iFindex, 0);
                                                             // Update function call and description fields
-                std::string tLocal = CatVec[iCategory].Functions[iFunction].LocalName;
-                tLocal.append("(").append(CatVec[iCategory].Functions[iFunction].Params).append(")");
-                SetWindowText(GetDlgItem(hDlg, IDC_EDITFUNC), (LPCSTR)tLocal.c_str());
-                SetWindowText(GetDlgItem(hDlg, IDC_EDITDESC), (LPCSTR)CatVec[iCategory].Functions[iFunction].Description.c_str());
+                std::wstring tLocal = CatVec[iCategory].Functions[iFunction].LocalName;
+                tLocal.append(L"(").append(CatVec[iCategory].Functions[iFunction].Params).append(L")");
+                SetWindowText(GetDlgItem(hDlg, IDC_EDITFUNC), (LPCWSTR)tLocal.c_str());
+                SetWindowText(GetDlgItem(hDlg, IDC_EDITDESC), (LPCWSTR)CatVec[iCategory].Functions[iFunction].Description.c_str());
             }
             return FALSE;   // return FALSE (0) - Local action, don't close the window.
             break;
@@ -333,7 +336,7 @@ INT_PTR CALLBACK CFDlgProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
         //TODO: If IDINSERT pushed, pass selected function LocalName(plus params template) to Mathcad at the
         //      cursor location.  We can do this by
         //      1. Placing string in CLIPBOARD and sending Mathcad a WM_PASTE message
-        //         (Probs require capturing and replacing an user data on CLIPBOARD)
+        //         (Probably require capturing and replacing an user data on CLIPBOARD)
         //      2. Send each character in the function name as a WM_KEYDOWN/WM_KEYUP pair through
         //         the Windows messaging queue targeting the Mathcad Prime HWND (more tedious?
         //         Might not support extended character set if needed.)
@@ -364,33 +367,62 @@ bool isXML(const fs::path& p)
 /*******************************************************************************************************/
 void PopXMLError(tinyxml2::XMLError errnum)
 {
-    std::string errmsg = "XML File Error: ";
+    std::wstring errmsg = L"XML File Error: ";
     switch (errnum)
     {
-    case tinyxml2::XML_SUCCESS: errmsg.append("No Error"); break;
-    case tinyxml2::XML_NO_ATTRIBUTE: errmsg.append("No Attribute"); break;
-    case tinyxml2::XML_WRONG_ATTRIBUTE_TYPE: errmsg.append("Wrong Attribute Type"); break;
-    case tinyxml2::XML_ERROR_FILE_NOT_FOUND: errmsg.append("File Not Found"); break;
-    case tinyxml2::XML_ERROR_FILE_COULD_NOT_BE_OPENED: errmsg.append("File could not be opened"); break;
-    case tinyxml2::XML_ERROR_FILE_READ_ERROR: errmsg.append("File Read Error"); break;
-    case tinyxml2::XML_ERROR_PARSING_ELEMENT: errmsg.append("Error Parsing Element"); break;
-    case tinyxml2::XML_ERROR_PARSING_ATTRIBUTE: errmsg.append("Error Parsing Attribute"); break;
-    case tinyxml2::XML_ERROR_PARSING_TEXT: errmsg.append("Error Parsing Text"); break;
-    case tinyxml2::XML_ERROR_PARSING_CDATA: errmsg.append("Error Parsing CData"); break;
-    case tinyxml2::XML_ERROR_PARSING_COMMENT: errmsg.append("Error Parsing Comment"); break;
-    case tinyxml2::XML_ERROR_PARSING_DECLARATION: errmsg.append("Error Parsing Declaration"); break;
-    case tinyxml2::XML_ERROR_PARSING_UNKNOWN: errmsg.append("Unknown Parsing Error"); break;
-    case tinyxml2::XML_ERROR_EMPTY_DOCUMENT: errmsg.append("Empty Document"); break;
-    case tinyxml2::XML_ERROR_MISMATCHED_ELEMENT: errmsg.append("Mismatched Element"); break;
-    case tinyxml2::XML_ERROR_PARSING: errmsg.append("Parsing Error"); break;
-    case tinyxml2::XML_CAN_NOT_CONVERT_TEXT: errmsg.append("Cannot Convert Text"); break;
-    case tinyxml2::XML_NO_TEXT_NODE: errmsg.append("No Text Node"); break;
-    case tinyxml2::XML_ELEMENT_DEPTH_EXCEEDED: errmsg.append("Element Depth Exceeded"); break;
-    default: errmsg.append("Unknown Error"); break;
+    case tinyxml2::XML_SUCCESS: errmsg.append(L"No Error"); break;
+    case tinyxml2::XML_NO_ATTRIBUTE: errmsg.append(L"No Attribute"); break;
+    case tinyxml2::XML_WRONG_ATTRIBUTE_TYPE: errmsg.append(L"Wrong Attribute Type"); break;
+    case tinyxml2::XML_ERROR_FILE_NOT_FOUND: errmsg.append(L"File Not Found"); break;
+    case tinyxml2::XML_ERROR_FILE_COULD_NOT_BE_OPENED: errmsg.append(L"File could not be opened"); break;
+    case tinyxml2::XML_ERROR_FILE_READ_ERROR: errmsg.append(L"File Read Error"); break;
+    case tinyxml2::XML_ERROR_PARSING_ELEMENT: errmsg.append(L"Error Parsing Element"); break;
+    case tinyxml2::XML_ERROR_PARSING_ATTRIBUTE: errmsg.append(L"Error Parsing Attribute"); break;
+    case tinyxml2::XML_ERROR_PARSING_TEXT: errmsg.append(L"Error Parsing Text"); break;
+    case tinyxml2::XML_ERROR_PARSING_CDATA: errmsg.append(L"Error Parsing CData"); break;
+    case tinyxml2::XML_ERROR_PARSING_COMMENT: errmsg.append(L"Error Parsing Comment"); break;
+    case tinyxml2::XML_ERROR_PARSING_DECLARATION: errmsg.append(L"Error Parsing Declaration"); break;
+    case tinyxml2::XML_ERROR_PARSING_UNKNOWN: errmsg.append(L"Unknown Parsing Error"); break;
+    case tinyxml2::XML_ERROR_EMPTY_DOCUMENT: errmsg.append(L"Empty Document"); break;
+    case tinyxml2::XML_ERROR_MISMATCHED_ELEMENT: errmsg.append(L"Mismatched Element"); break;
+    case tinyxml2::XML_ERROR_PARSING: errmsg.append(L"Parsing Error"); break;
+    case tinyxml2::XML_CAN_NOT_CONVERT_TEXT: errmsg.append(L"Cannot Convert Text"); break;
+    case tinyxml2::XML_NO_TEXT_NODE: errmsg.append(L"No Text Node"); break;
+    case tinyxml2::XML_ELEMENT_DEPTH_EXCEEDED: errmsg.append(L"Element Depth Exceeded"); break;
+    default: errmsg.append(L"Unknown Error"); break;
     }
-    MessageBox(hwndDlg, errmsg.c_str(), "TinyXML2 Error", MB_ICONERROR);
+    MessageBox(hwndDlg, errmsg.c_str(), L"TinyXML2 Error", MB_ICONERROR);
     return;
 }
+
+/*******************************************************************************************************/
+/*   Convert multi-byte utf8 char string to wide char string (utf-16)                                  */
+/*                                                                                                     */
+/*   TinyXML2 only reads UTF-8 encoded single byte characters.  ASCII version of Windows dialogs and   */
+/*   message boxes do not handle this encoding in ASCII mode so we have to use the UNICODE versions,   */
+/*   which only take pointers to wide character strings (wchar_t*) as inputs.  This means that we have */
+/*   to convert the UTF-8 single byte strings to wide strings while preserving the UTF-8 encoding.     */
+/*   Win32 provides a function for this, MutliByteToWideChar, but we've wrapped a function around it   */
+/*   here to make it easier to use; counting characters, allocating memory, and returning the          */
+/*   converted wide-string.                                                                            */
+/*******************************************************************************************************/
+/*   TODO: Might want to consider some pop-up error message boxes here. Currently just returns null.   */
+wchar_t* utf8_to_wchar(const char* input)
+{
+    wchar_t* Buffer;                  // pointer to buffer to wide-character Buffer (null)
+    int BuffSize = 0, Result = 0;     // Init Buffer and Result sizes
+
+    BuffSize = MultiByteToWideChar(CP_UTF8, 0, input, -1, NULL, 0);  // get length of input char* string in "chars" (not bytes)
+    Buffer = (wchar_t*)malloc(sizeof(wchar_t) * BuffSize);           // allocate number of characters needed to wide string
+    if (Buffer)                                                      // IF the buffer size is > 0
+    {
+        Result = MultiByteToWideChar(CP_UTF8, 0, input, -1, Buffer, BuffSize); // Convert (char*)input to wide (wchar_t*)Buffer
+    }
+                                                                     //
+    return ((Result > 0) && (Result <= BuffSize)) ? Buffer : NULL;   // IF non-zero length and we didn't overflow the Buffer
+                                                                     //    return the wide string (wchar_t*)Buffer, otherwise null
+}
+
 
 /*******************************************************************************************************/
 /*   Load the XML Docs if they exist.                                                                  */
@@ -401,15 +433,13 @@ void PopXMLError(tinyxml2::XMLError errnum)
 /*           Open each one and process with TinyXML2                                                   */
 /*           For Each Function                                                                         */
 /*               Get name, local_name, params, category, and description                               */
+/*               Convert UTF-8 MB strings to wide multi-byte strings                                   */
 /*               Load into ListBox data structure                                                      */
 /*           END For Loop                                                                              */
 /*       END For Loop                                                                                  */
 /*   END IF                                                                                            */
 /*******************************************************************************************************/
-// TODO: Extended character set (including ² & ³ ) are misrepresented in dialog box.  Probably need to
-//       convert to wchar (UNICODE Font) to handle the extra bits either when reading in the strings
-//       from XML or using DialogBoxW to handle these UNICODE strings in the Dialog Box correclty.
-BOOL LoadDocs()    // Get DLL directory and the \docs diretory underneith it
+BOOL LoadDocs()    // Get DLL directory and the \docs directory underneath it
 {
     TCHAR DllPath[MAX_PATH] = { 0 };
 
@@ -422,37 +452,38 @@ BOOL LoadDocs()    // Get DLL directory and the \docs diretory underneith it
         // Build and display debug message box.  Can be deleted later.
         if (cfDebug)
         {
-            std::string msg = "DLL Name = \n";
-            msg.append(fsName.string());
-            msg.append("\n\nPath = \n");
-            msg.append(fsName.parent_path().string());
-            msg.append("\n\nDocs Path = \n");
-            msg.append(docsPath.string());
-            MessageBox(hwndDlg, msg.c_str(), "Getting DLL Directory", 0);
+            std::wstring msg = L"DLL Name = \n";
+            msg.append(fsName.wstring());
+            msg.append(L"\n\nPath = \n");
+            msg.append(fsName.parent_path().wstring());
+            msg.append(L"\n\nDocs Path = \n");
+            msg.append(docsPath.wstring());
+            MessageBox(hwndDlg, msg.c_str(), L"Getting DLL Directory", 0);
         }
 
-        std::string dbgmsg = "";
-        std::string xmlmsg = "";
-        std::string CatLast = "";
+        std::wstring dbgmsg = L"";
+        std::wstring xmlmsg = L"";
+        std::wstring CatNew = L"";
         int iCat = -1;
         int iFunc = 0;
-        FuncDef tFunc;
-        FuncVec tFuncVec;
-        Category tCat = { "empty", tFuncVec };
+        FuncDef tFunc;            // This is a temporary Function Definition 
+        FuncVec tFuncVec;         // This is a temporary Function Vector
+        Category tCat = { L"USER", tFuncVec };   // This is a temporary Category description, initialized to "USER"
+        std::string tempString;
 
-        dbgmsg.append("The docs directory");
-        if ( fs::exists(docsPath) && fs::is_directory(docsPath))                                   // if "Custom Functions\docs" direcotry found
+        dbgmsg.append(L"The docs directory");
+        if ( fs::exists(docsPath) && fs::is_directory(docsPath))                                   // if "Custom Functions\docs" directory found
         {
             long int fc = (long int)std::count_if(fs::directory_iterator(docsPath), {}, isXML);          // Count XML files in it
 
             if (fc < 1)                                                                                  // If no XML files found
             {
-                dbgmsg.append(", \n\n").append(docsPath.string()).append("\n\n contains no XML files.");
-                MessageBox(hwndDlg, dbgmsg.c_str(), "Getting DLL docs Directory", MB_ICONERROR);         //    Popup Error Message
+                dbgmsg.append(L", \n\n").append(docsPath.wstring()).append(L"\n\n contains no XML files.");
+                MessageBox(hwndDlg, dbgmsg.c_str(), L"Getting DLL docs Directory", MB_ICONERROR);         //    Popup Error Message
             }                                                                                            //    User Needs to Know (maybe)
             else                                                                                         // Otherwise => XML Files Found
             {
-                dbgmsg.append(" contains ").append(std::to_string(fc)).append((fc > 1) ? " XML files:" : " XML file:");
+                dbgmsg.append(L" contains ").append(std::to_wstring(fc)).append((fc > 1) ? L" XML files:" : L" XML file:");
 
                 tinyxml2::XMLDocument doc;                                                               // Create an XML Document structure
 
@@ -462,25 +493,50 @@ BOOL LoadDocs()    // Get DLL directory and the \docs diretory underneith it
                     {
                         tinyxml2::XMLError eResult = doc.LoadFile( entry.path().string().c_str());         // Load the XML File into XMLDocument
                         if (eResult != tinyxml2::XML_SUCCESS)
-                            PopXMLError(eResult);                                                          //   Pop an Error Message if not succeessful
+                            PopXMLError(eResult);                                                          //   Pop an Error Message if not successful
 
                         tinyxml2::XMLElement* p_root_element = doc.RootElement();                          // This is the <FUNCTIONS> Tag
                         tinyxml2::XMLElement* p_function = p_root_element->FirstChildElement("function");  // First <function> Tag
 
                         while (p_function)                                                                 // While <function> Tag valid
                         {
-                            tFunc.Name = p_function->FirstChildElement("name")->GetText();                 //    Get <name> text
-                            tFunc.LocalName = p_function->FirstChildElement("local_name")->GetText();      //    Get <local_name> text
-                            tFunc.Params = p_function->FirstChildElement("params")->GetText();             //    Get <params> text
-                            tFunc.Description = p_function->FirstChildElement("description")->GetText();   //    Get <description> text
-                            CatLast = p_function->FirstChildElement("category")->GetText();                //    Get last read <category> text
+                            if(NULL != p_function->FirstChildElement("name"))                              // If <name> Tag exists
+                            {                                                                                 // Get <name> text
+                                tFunc.Name = utf8_to_wchar(p_function->FirstChildElement("name")->GetText()); // Convert utf8 to wchar_t & assign to wstring
+                            }
+                            else                                                                           // otherwise...
+                            {                                                                              //     Skip this function entry
+                                p_function = p_function->NextSiblingElement("function");                       //    Get the next function
+                                continue;                                                                      //    Continue with next loop
+                            }                                                                              // END <name> Tag
 
-                            if (CatLast != tCat.CatName)                                                   //    If category changed
+                            if (NULL != p_function->FirstChildElement("local_name"))                       // if <local_name> Tag exists
+                                tFunc.LocalName = utf8_to_wchar(p_function->FirstChildElement("local_name")->GetText());  // Get <local_name> text (convert from utf-8)
+                            else                                                                           // Otherwise...
+                                tFunc.LocalName = tFunc.Name;                                              //    Set <local_name> to <name>
+                                                                                                           // END <local_name> Tag
+
+                            if (NULL != p_function->FirstChildElement("params"))                           // if <params> Tag exists
+                                tFunc.Params = utf8_to_wchar(p_function->FirstChildElement("params")->GetText()); // Get <params> text (convert from utf-8)
+                            else                                                                           // otherwise...
+                                tFunc.Params = L"0";                                                       //        Assume function takes (0)
+
+                            if (NULL != p_function->FirstChildElement("description"))                      // if <description> Tag exists
+                                tFunc.Description = utf8_to_wchar(p_function->FirstChildElement("description")->GetText()); // Get <description> text
+                            else
+                                tFunc.Description = L"<no description provided>";
+
+                            if (NULL != p_function->FirstChildElement("category"))                         // if <category> Tag exists
+                                CatNew = utf8_to_wchar(p_function->FirstChildElement("category")->GetText()); //    Get last read <category> text
+                            else                                                                           // otherwise
+                                CatNew = tCat.CatName;                                                     //       Assume previous function category (or default)
+
+                            if (CatNew != tCat.CatName)                                                    //    If category changed
                             {
                                 iCat++;                                                                    //      increment counter
                                 tFuncVec.clear();                                                          //      clear out temp function vector
                                 tFuncVec.push_back(tFunc);                                                 //      add new function to vector
-                                tCat.CatName = CatLast;                                                    //      put last read category in temp struct
+                                tCat.CatName = CatNew;                                                     //      put last read category in temp struct
                                 tCat.Functions = tFuncVec;                                                 //      put new func vector in temp struct
                                 CatVec.push_back(tCat);                                                    //      add new category to Vector
                              }
@@ -490,23 +546,24 @@ BOOL LoadDocs()    // Get DLL directory and the \docs diretory underneith it
                             }
                             p_function = p_function->NextSiblingElement("function");                       //    Get the next function
                         }                                                                                  // Until there are no more functions in the file
-                    }
-                }
-                for (int ic = 0; ic < CatVec.size(); ic++)
+                    }                                                                                   // ENDIF isXML?
+                }                                                                                    // END FOR Directory iterator
+
+                for (int ic = 0; ic < CatVec.size(); ic++)                                           // Build Debug message with all functions read (in case we need it)
                 {
                     for (int i = 0; i < CatVec[ic].Functions.size(); i++)
                     {
-                        dbgmsg.append("\n\t(").append(CatVec[ic].CatName).append(")\t");
+                        dbgmsg.append(L"\n\t(").append(CatVec[ic].CatName).append(L")\t");
                         dbgmsg.append(CatVec[ic].Functions[i].Name);
                     }
                 }
-                if (cfDebug) MessageBox(hwndDlg, dbgmsg.c_str(), "Getting DLL docs Directory", 0);
+                if (cfDebug) MessageBox(hwndDlg, dbgmsg.c_str(), L"Getting DLL docs Directory", 0);  // IF cfDebug flag is true, pop-up debug message box
             }
         }
         else
         {
-            dbgmsg.append(", \n\n").append(docsPath.string()).append("\n\n... does not Exist!");
-            MessageBox(hwndDlg, dbgmsg.c_str(), "Getting DLL docs Directory", MB_ICONERROR);
+            dbgmsg.append(L", \n\n").append(docsPath.wstring()).append(L"\n\n... does not Exist!");  // Pop-up message box if docs directory does not exist.
+            MessageBox(hwndDlg, dbgmsg.c_str(), L"Getting DLL docs Directory", MB_ICONERROR);
 
         }
     }
@@ -557,13 +614,13 @@ extern "C" BOOL WINAPI  DllEntryPoint (HINSTANCE hDLL, DWORD dwReason, LPVOID lp
             // ***        but instead, will load any XML docs found under Custom Functions
             // ***        and install the Keyboard hook here when the DLL Process is attached.
 
-            // Get DLL directory and the \docs diretory underneith it
+            // Get DLL directory and the \docs directory underneath it
             if (!LoadDocs()) break;    // If error, just break here and don't load the keyboard hooks.
 
             //
             // Attach the Keyboard Hook here and register the Keyboard Hook Callback Process
             //
-            if (cfDebug) MessageBox(hwndDlg, "Installing Hooks.", "CustFunc Add-In", 0);
+            if (cfDebug) MessageBox(hwndDlg, L"Installing Hooks.", L"CustFunc Add-In", 0);
             if (!bhooked) {
                 hhk = SetWindowsHookEx(WH_KEYBOARD_LL, (HOOKPROC)LowLevelKeyboardProc, hDLL, 0);
                 bhooked = true;
@@ -591,7 +648,7 @@ extern "C" BOOL WINAPI  DllEntryPoint (HINSTANCE hDLL, DWORD dwReason, LPVOID lp
             if (bhooked) {
                 if (UnhookWindowsHookEx(hhk)) {
                     bhooked = false;
-                    if (cfDebug) MessageBox(hwndDlg, "Removing Keyboard Hooks.", "CustFunc Add-In", 0);
+                    if (cfDebug) MessageBox(hwndDlg, L"Removing Keyboard Hooks.", L"CustFunc Add-In", 0);
                 }
             }
             break;                   
