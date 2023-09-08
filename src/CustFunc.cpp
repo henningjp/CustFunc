@@ -54,7 +54,8 @@ bool shiftDown = false;
 bool bhooked = false;
 bool cfDebug = false;
 bool fileDebug = true;
-static BOOL MC_Active = FALSE;    // TODO: Start off as TRUE since Mathcad is active when DLL Loads?
+//static BOOL MC_Active = FALSE;    // TODO: Start off as TRUE since Mathcad is active when DLL Loads?
+
 //static wchar_t text[TEXTLENGTH];
 int  nVirtKey;
 int iCategory;
@@ -94,8 +95,113 @@ HINSTANCE hDLLglobal = 0;
 BOOL LoadDocs();    // Get DLL directory and the \docs directory underneath it
 INT_PTR CALLBACK AboutDlgProc(HWND, UINT, WPARAM, LPARAM);
 INT_PTR CALLBACK CFDlgProc(HWND, UINT, WPARAM, LPARAM);
+void SendAffine(wchar_t);
 
 
+void SendAffine(wchar_t chFC)
+{
+    INPUT keys[20] = {};
+    ZeroMemory(keys, sizeof(keys));
+    
+    // Now enter "°F or "°C in newly created math region *******************************************
+    keys[0].type = INPUT_KEYBOARD;
+    keys[0].ki.wVk = 0;
+    keys[0].ki.wScan = L'"';                          // Double Quote
+    keys[0].ki.dwFlags = KEYEVENTF_UNICODE;
+
+    keys[1].type = INPUT_KEYBOARD;
+    keys[1].ki.wVk = 0;
+    keys[1].ki.wScan = L'"';                          // Double Quote (UP)
+    keys[1].ki.dwFlags = KEYEVENTF_UNICODE | KEYEVENTF_KEYUP;
+
+    keys[2].type = INPUT_KEYBOARD;
+    keys[2].ki.wVk = 0;
+    keys[2].ki.wScan = 0x00B0;                        // Degree Sym
+    keys[2].ki.dwFlags = KEYEVENTF_UNICODE;
+
+    keys[3].type = INPUT_KEYBOARD;
+    keys[3].ki.wVk = 0;
+    keys[3].ki.wScan = 0x00B0;                        // Degree Sym (UP)
+    keys[3].ki.dwFlags = KEYEVENTF_UNICODE | KEYEVENTF_KEYUP;
+
+     // Now send the 'C' or 'F' character from the parameter ***************************************
+    keys[4].type = INPUT_KEYBOARD;
+    //keys[8].ki.wVk = (isC) ? 'C' : 'F';             // (Not using vKey)
+    keys[4].ki.wVk = 0;                               // Send UNICODE Instead (no Shift req'd)
+    keys[4].ki.wScan = chFC;                          // 'C' or 'F' Char
+    keys[4].ki.dwFlags = KEYEVENTF_UNICODE;
+
+    keys[5].type = INPUT_KEYBOARD;
+    //keys[8].ki.wVk = (isC) ? 'C' : 'F';             // (Not using vKey)
+    keys[5].ki.wVk = 0;                               // Send UNICODE Instead (no Shift req'd)
+    keys[5].ki.wScan = chFC;                          // 'C' or 'F' Char (UP)
+    keys[5].ki.dwFlags = KEYEVENTF_KEYUP;
+
+    // Issue KEYUP for <Control> & <Shift> as user is likely still holding them down. ***************
+    // Have to release both left and right, even though user is likely using left keys
+    keys[6].type = INPUT_KEYBOARD;
+    keys[6].ki.wVk = VK_RCONTROL;                      // <Ctrl>
+    keys[6].ki.dwFlags = KEYEVENTF_EXTENDEDKEY;        // Right <Ctrl> key is actually an extended key
+                                                       // dwFlags must be set to KEYEVENTF_EXTENDEDKEY
+
+    keys[7].type = INPUT_KEYBOARD;
+    keys[7].ki.wVk = VK_RCONTROL;                      // Release <Ctrl>
+    keys[7].ki.dwFlags = KEYEVENTF_EXTENDEDKEY | KEYEVENTF_KEYUP;  // (UP)  101-Keyboard
+
+    keys[8].type = INPUT_KEYBOARD;                     // 
+    keys[8].ki.wVk = VK_RSHIFT;                        // <Shift>
+
+    keys[9].type = INPUT_KEYBOARD;                     // 
+    keys[9].ki.wVk = VK_RSHIFT;                        // <Shift>
+    keys[9].ki.dwFlags = KEYEVENTF_KEYUP;              // (UP)
+
+    keys[10].type = INPUT_KEYBOARD;                    // 
+    keys[10].ki.wVk = VK_LSHIFT;                       // <Shift>
+
+    keys[11].type = INPUT_KEYBOARD;                    // 
+    keys[11].ki.wVk = VK_LSHIFT;                       // <Shift>
+    keys[11].ki.dwFlags = KEYEVENTF_KEYUP;             // (UP)
+
+    keys[12].type = INPUT_KEYBOARD;
+    keys[12].ki.wVk = VK_LCONTROL;                     // <Ctrl>
+
+    keys[13].type = INPUT_KEYBOARD;
+    keys[13].ki.wVk = VK_LCONTROL;                     // Release <Ctrl>
+    keys[13].ki.dwFlags = KEYEVENTF_KEYUP;             // (UP)
+
+    // Now delete the double quotes around the °X symbol ******************************************
+    // Since the <Ctrl> and <Shift> keys are released above, this will actually work
+    keys[14].type = INPUT_KEYBOARD;
+    keys[14].ki.wVk = VK_DELETE;                       // <DEL>
+
+    keys[15].type = INPUT_KEYBOARD;
+    keys[15].ki.wVk = VK_DELETE;                       // <DEL> (UP)
+    keys[15].ki.dwFlags = KEYEVENTF_KEYUP;
+
+
+    // Now Set Label to Unit with <Ctrl>U  *********************************************************
+    keys[16].type = INPUT_KEYBOARD;
+    keys[16].ki.wVk = VK_LCONTROL;                    // <Control>
+
+    keys[17].type = INPUT_KEYBOARD;
+    keys[17].ki.wVk = 'U';                            // 'U' (Down - lower case)
+
+    keys[18].type = INPUT_KEYBOARD;
+    keys[18].ki.wVk = 'U';                            // 'U' (UP - lower case)
+    keys[18].ki.dwFlags = KEYEVENTF_KEYUP;
+
+    keys[19].type = INPUT_KEYBOARD;
+    keys[19].ki.wVk = VK_LCONTROL;                    // <Control> (UP)
+    keys[19].ki.dwFlags = KEYEVENTF_KEYUP;
+
+
+    UINT uSent = SendInput(ARRAYSIZE(keys), keys, sizeof(INPUT));
+    if (uSent != ARRAYSIZE(keys))
+    {
+        MessageBox(hwndDlg, L"Send °C or °F to Mathcad Failed!", L"Keyboard Hook Process", 0);
+    }
+
+}
 
 /*******************************************************************************************************/
 /*   Low-Level Keyboard Hook Call Back Process.                                                        */
@@ -107,43 +213,70 @@ INT_PTR CALLBACK CFDlgProc(HWND, UINT, WPARAM, LPARAM);
 /*******************************************************************************************************/
 LRESULT CALLBACK LowLevelKeyboardProc(int nCode, WPARAM wParam, LPARAM lParam)
 {
+
     if ( nCode == HC_ACTION ) {  // Only process if nCode == HC_ACTION (0) == change in keyboard key state
         PKBDLLHOOKSTRUCT hookStruct = (PKBDLLHOOKSTRUCT) lParam;
-        // Check if any key was pressed - KEYDOWN
-        if (wParam == WM_SYSKEYDOWN || wParam == WM_KEYDOWN)
+
+        // A bit of code here to make sure that Mathcad Prime is the active window; Ignore keyboard otherwise.
+        wchar_t * wnd_title = nullptr;                           // Default to empty window title
+        wchar_t * ptcFound = NULL;                               // Default to PTC Mathcad not active
+        HWND hwnd = GetForegroundWindow();                       // get handle of currently active window
+        DWORD cTextLen = GetWindowTextLength(hwnd);              // get length of window title string
+        if (cTextLen > 0)
         {
-            wchar_t * wnd_title = nullptr;
-            wchar_t * ptcFound = NULL;
-            HWND hwnd = GetForegroundWindow();                       // get handle of currently active window
-            DWORD cTextLen = GetWindowTextLength(hwnd);              // get length of window title string
-            if (cTextLen > 0)
+            cTextLen++;                                          // Add one for null terminator, just in case
+            // Allocate memory for the string and compy the string into memory
+            wnd_title = (PWSTR)VirtualAlloc((LPVOID)NULL, cTextLen, MEM_COMMIT, PAGE_READWRITE);
+            if (wnd_title != NULL)                               // IF wnd_title not null,
             {
-                // Allocate memory for the string and compy the string into memory
-                wnd_title = (PWSTR)VirtualAlloc((LPVOID)NULL, (DWORD)(cTextLen + 1), MEM_COMMIT, PAGE_READWRITE);
-                if (wnd_title != NULL)                               // IF wnd_title not null,
-                {
-                    GetWindowText(hwnd, wnd_title, cTextLen + 1);    //     get title of the window: was size sizeof(wnd_title)
-                    ptcFound = std::wcsstr(wnd_title, L"PTC Mathcad Prime"); // See if active window starts with "PTC Mathcad Prime"
-                }
-                else
-                    wnd_title = L"<no title>";
+                GetWindowText(hwnd, wnd_title, cTextLen);        //         get title of the window: was size sizeof(wnd_title)
+                ptcFound = std::wcsstr(wnd_title, L"PTC Mathcad Prime"); // See if active window starts with "PTC Mathcad Prime"
             }
-            if (ptcFound) {                                          // If yes (not NULL)...
-                // Only if Mathcad Window is active, process keystrokes
-                // If Mathcad Window is active, Pop Custom Function Dialog Box here.
-                    
+            else
+                wnd_title = L"<no title>";                       // otherwise, set to "<no title>"
+        }
+        if (ptcFound)                                            // If yes (not NULL)...
+        {
+            // Key checks below only processed if Mathcad Window is active
+            switch (wParam)
+            {
+            case WM_SYSKEYDOWN:
+            case WM_KEYDOWN:            // Check if any key was pressed - KEYDOWN
+
+            {
+
                 // Check if F2 pressed and <Shift> key is also down; gets shift key state on the fly.
                 if (hookStruct->vkCode == VK_F2 && (GetKeyState(VK_SHIFT) & SHIFTED)) {
+
+                    // If Mathcad Window is active, Pop Custom Function Dialog Box here.
                     DialogBox(hDLLglobal, MAKEINTRESOURCE(IDD_CFDIALOG), hwnd, CFDlgProc);
+                    //TODO: Return function string from DialogBox and SendInput to Mathcad
                 }
 
-                // TODO: Check if <Ctrl><Shift>F was pressed to insert "°F" at Mathcad Cursor Location
-                // TODO: Check if <Ctrl><Shift>C was pressed to insert "°C" at Mathcad Cursor Location
+                // Check if <Ctrl><Shift>">" was pressed to insert "°F" at Mathcad Cursor Location
+                if (hookStruct->vkCode == VK_OEM_PERIOD && (GetKeyState(VK_SHIFT) & SHIFTED) && (GetKeyState(VK_CONTROL) & SHIFTED))
+                {
+                    SendAffine(L'F');
+                    return 1;
+                }
+                // Check if <Ctrl><Shift>"<" was pressed to insert "°C" at Mathcad Cursor Location
+                if (hookStruct->vkCode == VK_OEM_COMMA && (GetKeyState(VK_SHIFT) & SHIFTED) && (GetKeyState(VK_CONTROL) & SHIFTED))
+                {
+                    SendAffine(L'C');
+                    return 1;
+                }
             }
-        }
-    }
+            break;    // WM_SYSKEYDOWN and WM_KEYDOWN
+
+            // Add other Message cases here if needed
+
+            } // END switch (wParam)
+        } // END ptcFound
+    } // END HC_ACTION
+
     return CallNextHookEx(hhk, nCode, wParam, lParam);
-}
+
+}  // Callback 
 
 /*******************************************************************************************************/
 /*   About Box Dialog Process.                                                                         */
