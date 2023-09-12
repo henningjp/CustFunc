@@ -29,7 +29,7 @@ enum { MC_STRING = STRING };  // substitute enumeration variable MC_STRING for S
 std::string CFVersion = "0.1";       // Mathcad Add-in version number
 
 // Setup Dialog Window for debugging
-HWND hwndDlg;  // Dialog handle for pop-up message boxes
+HWND hwndDlg;  // Generic Dialog handle for pop-up message boxes (MessageBox) when needed
 
 //enum EC { MUST_BE_REAL = 1, 
 //          UNKNOWN, 
@@ -56,10 +56,11 @@ bool cfDebug = false;
 bool fileDebug = true;
 //static BOOL MC_Active = FALSE;    // TODO: Start off as TRUE since Mathcad is active when DLL Loads?
 
-//static wchar_t text[TEXTLENGTH];
-int  nVirtKey;
+// Global Category and Function indices;
 int iCategory;
 int iFunction;
+bool SendFunction = false;
+// int  nVirtKey;
 
 /***************************************************/
 /*      Dynamically allocated ListBox Vectors      */
@@ -98,6 +99,13 @@ INT_PTR CALLBACK CFDlgProc(HWND, UINT, WPARAM, LPARAM);
 void SendAffine(wchar_t);
 
 
+
+/*******************************************************************************************************/
+/*   Send Affine Unit String to Mathcad                                                                */
+/*                                                                                                     */
+/*   Send Keystrokes (using SendInput) to PTC Mathcad Prime window to reproduce °F or °C unit symbols. */
+/*   Calling function should pass a 'C' or 'F' character as needed.                                    */
+/*******************************************************************************************************/
 void SendAffine(wchar_t chFC)
 {
     INPUT keys[20] = {};
@@ -137,46 +145,41 @@ void SendAffine(wchar_t chFC)
     keys[5].ki.wScan = chFC;                          // 'C' or 'F' Char (UP)
     keys[5].ki.dwFlags = KEYEVENTF_KEYUP;
 
-    // Issue KEYUP for <Control> & <Shift> as user is likely still holding them down. ***************
-    // Have to release both left and right, even though user is likely using left keys
+    // Issue KEYDOWN/KEYUP for <Control> & <Shift> as user is likely still holding them down. ********
+    // Have to release both left and right, in case user is using keys on either side
     keys[6].type = INPUT_KEYBOARD;
-    keys[6].ki.wVk = VK_RCONTROL;                      // <Ctrl>
+    keys[6].ki.wVk = VK_RCONTROL;                      // Right <Ctrl>
     keys[6].ki.dwFlags = KEYEVENTF_EXTENDEDKEY;        // Right <Ctrl> key is actually an extended key
                                                        // dwFlags must be set to KEYEVENTF_EXTENDEDKEY
 
-    keys[7].type = INPUT_KEYBOARD;
-    keys[7].ki.wVk = VK_RCONTROL;                      // Release <Ctrl>
-    keys[7].ki.dwFlags = KEYEVENTF_EXTENDEDKEY | KEYEVENTF_KEYUP;  // (UP)  101-Keyboard
+    keys[7] = keys[6];                                 // Right <Ctrl>
+    keys[7].ki.dwFlags |= KEYEVENTF_KEYUP;             // (UP)   OR the KEYUP flag with EXTENDEDKEY
 
-    keys[8].type = INPUT_KEYBOARD;                     // 
-    keys[8].ki.wVk = VK_RSHIFT;                        // <Shift>
+    keys[8].type = INPUT_KEYBOARD;
+    keys[8].ki.wVk = VK_LCONTROL;                      // Left <Ctrl>
 
-    keys[9].type = INPUT_KEYBOARD;                     // 
-    keys[9].ki.wVk = VK_RSHIFT;                        // <Shift>
-    keys[9].ki.dwFlags = KEYEVENTF_KEYUP;              // (UP)
+    keys[9] = keys[8];                                 // Left <Ctrl>
+    keys[9].ki.dwFlags = KEYEVENTF_KEYUP;              // (UP)   set the KEYUP flag
 
     keys[10].type = INPUT_KEYBOARD;                    // 
-    keys[10].ki.wVk = VK_LSHIFT;                       // <Shift>
+    keys[10].ki.wVk = VK_RSHIFT;                       // Right <Shift>
 
-    keys[11].type = INPUT_KEYBOARD;                    // 
-    keys[11].ki.wVk = VK_LSHIFT;                       // <Shift>
-    keys[11].ki.dwFlags = KEYEVENTF_KEYUP;             // (UP)
+    keys[11] = keys[10];                               // Right <Shift>
+    keys[11].ki.dwFlags = KEYEVENTF_KEYUP;             // (UP)   set the KEYUP flag
 
-    keys[12].type = INPUT_KEYBOARD;
-    keys[12].ki.wVk = VK_LCONTROL;                     // <Ctrl>
+    keys[12].type = INPUT_KEYBOARD;                    // 
+    keys[12].ki.wVk = VK_LSHIFT;                       // Left <Shift>
 
-    keys[13].type = INPUT_KEYBOARD;
-    keys[13].ki.wVk = VK_LCONTROL;                     // Release <Ctrl>
-    keys[13].ki.dwFlags = KEYEVENTF_KEYUP;             // (UP)
+    keys[13] = keys[12];                               // Left <Shift>
+    keys[13].ki.dwFlags = KEYEVENTF_KEYUP;             // (UP)   set the KEYUP flag
 
-    // Now delete the double quotes around the °X symbol ******************************************
+    // Now send <DEL> key todelete the double quotes around the °X symbol **************************
     // Since the <Ctrl> and <Shift> keys are released above, this will actually work
     keys[14].type = INPUT_KEYBOARD;
     keys[14].ki.wVk = VK_DELETE;                       // <DEL>
 
-    keys[15].type = INPUT_KEYBOARD;
-    keys[15].ki.wVk = VK_DELETE;                       // <DEL> (UP)
-    keys[15].ki.dwFlags = KEYEVENTF_KEYUP;
+    keys[15] = keys[14];                               // <DEL>
+    keys[15].ki.dwFlags = KEYEVENTF_KEYUP;             // (UP)
 
 
     // Now Set Label to Unit with <Ctrl>U  *********************************************************
@@ -194,13 +197,129 @@ void SendAffine(wchar_t chFC)
     keys[19].ki.wVk = VK_LCONTROL;                    // <Control> (UP)
     keys[19].ki.dwFlags = KEYEVENTF_KEYUP;
 
-
     UINT uSent = SendInput(ARRAYSIZE(keys), keys, sizeof(INPUT));
     if (uSent != ARRAYSIZE(keys))
     {
         MessageBox(hwndDlg, L"Send °C or °F to Mathcad Failed!", L"Keyboard Hook Process", 0);
     }
 
+}
+
+/*******************************************************************************************************/
+/*   Send Function to Mathcad                                                                          */
+/*                                                                                                     */
+/*   Send Function Keystrokes (using SendInput) to PTC Mathcad Prime window.                           */
+/*   Calling function passes the Mathcad window handle and the current category (iC) and function (if) */
+/*   indices.                                                                                          */
+/*******************************************************************************************************/
+
+int SendFunction2Mathcad(HWND mcad, int iC, int iF)
+{
+    //int iFuncLen = CatVec[iC].Functions[iF].LocalName.length();     // length of function string
+    //int iParamLen = CatVec[iC].Functions[iF].Params.length();       // length of parameter string
+    //int len = iFuncLen + iParamLen + 2;                             // Sum + 2 for the parens ()
+
+    std::wstring FuncString = CatVec[iC].Functions[iF].LocalName;     // Get Function string
+    std::wstring strp = CatVec[iC].Functions[iF].Params;
+    for (auto& c : strp) c = toupper(c);                              // make temp UCase version of Params
+    if (strp != L"CONST")                                             // if Params <> const
+        FuncString.append(L"(").append(CatVec[iC].Functions[iF].Params);  // append parameters, no closing paren
+
+    wchar_t lch = ' ';
+    std::vector<INPUT> keys;
+    static bool quoteSet = false;
+    for (auto ch : FuncString)                     // for each character in the Function String
+    {
+        switch (ch)
+        {
+            case L' ':               // Skip spaces.  Mathcad won't like them in a Math region.
+                break;
+
+            case L'.':               // Handle subscripts with a dot.  Send <Ctrl>- toggle
+            {
+                INPUT input = { 0 };
+                input.type = INPUT_KEYBOARD;
+                input.ki.wVk = VK_LCONTROL;                        // Left <Ctrl>
+                keys.push_back(input);
+
+                input.ki.wVk = VK_SUBTRACT;                        // '-' key
+                keys.push_back(input);
+
+                input.ki.dwFlags = KEYEVENTF_KEYUP;                // '-' key (KEYUP)
+                keys.push_back(input);
+
+                input.ki.wVk = VK_LCONTROL;                        // Left <Ctrl>
+                input.ki.dwFlags = KEYEVENTF_KEYUP;                // (UP)   set the KEYUP flag
+                keys.push_back(input);
+            }
+            break;
+
+            case L'"':
+            if (quoteSet)                                      // This is a matching pair
+            {
+
+                INPUT input = { 0 };
+
+                input.type = INPUT_KEYBOARD;
+                input.ki.wVk = VK_RIGHT;                           // '->' key
+                input.ki.dwFlags = KEYEVENTF_EXTENDEDKEY;          // It's an extended key on 101-keyboards
+                keys.push_back(input);
+
+                input.ki.dwFlags |= KEYEVENTF_KEYUP;               // '->' key (KEYUP)
+                keys.push_back(input);
+
+                quoteSet = false;                                  // clear flag and
+                break;                                             // break out of switch
+            }
+            else                                               // This is a first quote
+            {
+                quoteSet = true;                               //     set flag and fall through
+                [[fallthrough]];
+            }
+
+
+            default:                 // Handle any other characters as a UNICODE wchar_t
+            {
+                INPUT input = { 0 };
+                input.type = INPUT_KEYBOARD;
+                input.ki.dwFlags = KEYEVENTF_UNICODE;              // Send UNICODE Event (KEYDOWN)
+                input.ki.wScan = ch;                               //   with current character, ch
+                keys.push_back(input);
+
+                input.ki.dwFlags |= KEYEVENTF_KEYUP;               // Send UNICODE Event (KEYUP)
+                keys.push_back(input);
+            }
+        }   // Process next character in string...
+        lch = ch;
+    }  // FOR Loop over all characters in string
+
+    if ((int)keys.size() > 0)
+    {
+        // Add two more right arror to keystrokes list to get to the end of the function string.
+        INPUT input = { 0 };
+        input.type = INPUT_KEYBOARD;
+        input.ki.wVk = VK_RIGHT;                    // '->' key
+        input.ki.dwFlags = KEYEVENTF_EXTENDEDKEY;  // It's an extended key on 101-keyboards
+        keys.push_back(input);
+        input.ki.dwFlags |= KEYEVENTF_KEYUP;       // '->' key (KEYUP)
+        keys.push_back(input);
+        input.ki.dwFlags = KEYEVENTF_EXTENDEDKEY;  // It's an extended key on 101-keyboards
+        keys.push_back(input);
+        input.ki.dwFlags |= KEYEVENTF_KEYUP;       // '->' key (KEYUP)
+        keys.push_back(input);
+
+        SetActiveWindow(mcad);                                              // Make sure user hasn't clicked away
+        UINT uSent = SendInput((UINT)keys.size(), keys.data(), sizeof(INPUT));    // send input to current window
+
+        if (uSent != (UINT)keys.size())                                     // if error
+        {                                                                   //    pop a message to user
+            FuncString.insert(0, L"Send UNICODE Function string, [").append(L"] to Mathcad Failed!");
+            MessageBox(hwndDlg, FuncString.c_str(), L"Custom Function Dialog Process", 0);
+            return 1;
+        }                                                                   // NOTE: This should never happen
+    }
+
+    return 0;
 }
 
 /*******************************************************************************************************/
@@ -250,19 +369,22 @@ LRESULT CALLBACK LowLevelKeyboardProc(int nCode, WPARAM wParam, LPARAM lParam)
 
                     // If Mathcad Window is active, Pop Custom Function Dialog Box here.
                     DialogBox(hDLLglobal, MAKEINTRESOURCE(IDD_CFDIALOG), hwnd, CFDlgProc);
-                    //TODO: Return function string from DialogBox and SendInput to Mathcad
+                    //Get function string index set by DialogBox and SendInput to Mathcad window
+                    if(SendFunction)                                                 // If user pressed Insert button
+                        int ierr = SendFunction2Mathcad(hwnd, iCategory, iFunction); //    Send selected string to Mathcad
+                    SendFunction = false;                                     // Reset SendFunction flag
                 }
 
                 // Check if <Ctrl><Shift>">" was pressed to insert "°F" at Mathcad Cursor Location
                 if (hookStruct->vkCode == VK_OEM_PERIOD && (GetKeyState(VK_SHIFT) & SHIFTED) && (GetKeyState(VK_CONTROL) & SHIFTED))
                 {
-                    SendAffine(L'F');
+                    SendAffine(L'F');      // Send keystrokes for °F with unit label
                     return 1;
                 }
                 // Check if <Ctrl><Shift>"<" was pressed to insert "°C" at Mathcad Cursor Location
                 if (hookStruct->vkCode == VK_OEM_COMMA && (GetKeyState(VK_SHIFT) & SHIFTED) && (GetKeyState(VK_CONTROL) & SHIFTED))
                 {
-                    SendAffine(L'C');
+                    SendAffine(L'C');      // Send keystrokes for °C with unit label
                     return 1;
                 }
             }
@@ -455,7 +577,7 @@ INT_PTR CALLBACK CFDlgProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
             if (HIWORD(wParam) == LBN_SELCHANGE)            // If they made a change in selection,
             {                                               // Get the index of the selected item
                 iFindex = (int)SendMessage(GetDlgItem(hDlg, IDC_LISTFUNC), LB_GETCURSEL, 0, 0);
-                int iFunction = (int)SendMessage(GetDlgItem(hDlg, IDC_LISTFUNC), LB_GETITEMDATA, iFindex, 0);
+                iFunction = (int)SendMessage(GetDlgItem(hDlg, IDC_LISTFUNC), LB_GETITEMDATA, iFindex, 0);
                                                             // Update function call and description fields
                 std::wstring tLocal = CatVec[iCategory].Functions[iFunction].LocalName;
                 tLocal.append(L"(").append(CatVec[iCategory].Functions[iFunction].Params).append(L")");
@@ -473,7 +595,9 @@ INT_PTR CALLBACK CFDlgProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
         //      2. Send each character in the function name as a WM_KEYDOWN/WM_KEYUP pair through
         //         the Windows messaging queue targeting the Mathcad Prime HWND (more tedious?
         //         Might not support extended character set if needed.)
-        case IDINSERT:
+        case IDINSERT:                // User selected the Insert Button
+            SendFunction = true;      // Set SendFunction flag and ...
+            [[fallthrough]];          //    fall through to IDCANCEL
         case IDCANCEL:                // User selected the Cancel button, do nothing and
             EndDialog(hDlg, 1);       // close the Dialog Box.
             return TRUE;
@@ -616,6 +740,10 @@ BOOL LoadDocs()    // Get DLL directory and the \docs directory underneath it
             }                                                                                            //    User Needs to Know (maybe)
             else                                                                                         // Otherwise => XML Files Found
             {
+                std::wstring::size_type n = 0;
+                const std::wstring s = L"\\n";
+                const std::wstring t = L"\r\n";
+
                 dbgmsg.append(L" contains ").append(std::to_wstring(fc)).append((fc > 1) ? L" XML files:" : L" XML file:");
 
                 tinyxml2::XMLDocument doc;                                                               // Create an XML Document structure
@@ -655,7 +783,15 @@ BOOL LoadDocs()    // Get DLL directory and the \docs directory underneath it
                                 tFunc.Params = L"0";                                                       //        Assume function takes (0)
 
                             if (NULL != p_function->FirstChildElement("description"))                      // if <description> Tag exists
+                            {
                                 tFunc.Description = utf8_to_wchar(p_function->FirstChildElement("description")->GetText()); // Get <description> text
+                                n = 0;
+                                while ((n = tFunc.Description.find(s, n)) != std::wstring::npos)
+                                {
+                                    tFunc.Description.replace(n, s.size(), t);
+                                    n += t.size();
+                                }
+                            }
                             else
                                 tFunc.Description = L"<no description provided>";
 
