@@ -215,20 +215,15 @@ void SendAffine(wchar_t chFC)
 
 int SendFunction2Mathcad(HWND mcad, int iC, int iF)
 {
-    //int iFuncLen = CatVec[iC].Functions[iF].LocalName.length();     // length of function string
-    //int iParamLen = CatVec[iC].Functions[iF].Params.length();       // length of parameter string
-    //int len = iFuncLen + iParamLen + 2;                             // Sum + 2 for the parens ()
-
     std::wstring FuncString = CatVec[iC].Functions[iF].LocalName;     // Get Function string
     std::wstring strp = CatVec[iC].Functions[iF].Params;
     for (auto& c : strp) c = toupper(c);                              // make temp UCase version of Params
     if (strp != L"CONST")                                             // if Params <> const
         FuncString.append(L"(").append(CatVec[iC].Functions[iF].Params);  // append parameters, no closing paren
 
-    wchar_t lch = ' ';
-    std::vector<INPUT> keys;
-    static bool quoteSet = false;
-    for (auto ch : FuncString)                     // for each character in the Function String
+    std::vector<INPUT> keys;         // Initialize Vector of INPUT keystrokes
+    static bool quoteSet = false;    // Initialize quote pair tracking to false
+    for (auto ch : FuncString)      // for each character in the Function String
     {
         switch (ch)
         {
@@ -237,7 +232,8 @@ int SendFunction2Mathcad(HWND mcad, int iC, int iF)
 
             case L'.':               // Handle subscripts with a dot.  Send <Ctrl>- toggle
             {
-                INPUT input = { 0 };
+                INPUT input = { 0 };                               // Initialize temp input stroke
+
                 input.type = INPUT_KEYBOARD;
                 input.ki.wVk = VK_LCONTROL;                        // Left <Ctrl>
                 keys.push_back(input);
@@ -255,10 +251,10 @@ int SendFunction2Mathcad(HWND mcad, int iC, int iF)
             break;
 
             case L'"':
-            if (quoteSet)                                      // This is a matching pair
-            {
+            if (quoteSet)                                      // This is a matching quote pair; Mathcad will have
+            {                                                  //    already supplied it, so Right Arrow over it.
 
-                INPUT input = { 0 };
+                INPUT input = { 0 };                               // Initialize temp input stroke
 
                 input.type = INPUT_KEYBOARD;
                 input.ki.wVk = VK_RIGHT;                           // '->' key
@@ -271,7 +267,7 @@ int SendFunction2Mathcad(HWND mcad, int iC, int iF)
                 quoteSet = false;                                  // clear flag and
                 break;                                             // break out of switch
             }
-            else                                               // This is a first quote
+            else                                               // This is a first quote, actually send it
             {
                 quoteSet = true;                               //     set flag and fall through
                 [[fallthrough]];
@@ -280,7 +276,8 @@ int SendFunction2Mathcad(HWND mcad, int iC, int iF)
 
             default:                 // Handle any other characters as a UNICODE wchar_t
             {
-                INPUT input = { 0 };
+                INPUT input = { 0 };                               // Initialize temp input stroke
+
                 input.type = INPUT_KEYBOARD;
                 input.ki.dwFlags = KEYEVENTF_UNICODE;              // Send UNICODE Event (KEYDOWN)
                 input.ki.wScan = ch;                               //   with current character, ch
@@ -290,23 +287,26 @@ int SendFunction2Mathcad(HWND mcad, int iC, int iF)
                 keys.push_back(input);
             }
         }   // Process next character in string...
-        lch = ch;
     }  // FOR Loop over all characters in string
 
     if ((int)keys.size() > 0)
     {
         // Add two more right arror to keystrokes list to get to the end of the function string.
-        INPUT input = { 0 };
-        input.type = INPUT_KEYBOARD;
-        input.ki.wVk = VK_RIGHT;                    // '->' key
-        input.ki.dwFlags = KEYEVENTF_EXTENDEDKEY;  // It's an extended key on 101-keyboards
-        keys.push_back(input);
-        input.ki.dwFlags |= KEYEVENTF_KEYUP;       // '->' key (KEYUP)
-        keys.push_back(input);
-        input.ki.dwFlags = KEYEVENTF_EXTENDEDKEY;  // It's an extended key on 101-keyboards
-        keys.push_back(input);
-        input.ki.dwFlags |= KEYEVENTF_KEYUP;       // '->' key (KEYUP)
-        keys.push_back(input);
+        // skip if entering a constant
+        if (strp != L"CONST")
+        {
+            INPUT input = { 0 };
+            input.type = INPUT_KEYBOARD;
+            input.ki.wVk = VK_RIGHT;                   // '->' key
+            input.ki.dwFlags = KEYEVENTF_EXTENDEDKEY;  // It's an extended key on 101-keyboards
+            keys.push_back(input);
+            input.ki.dwFlags |= KEYEVENTF_KEYUP;       // '->' key (KEYUP)
+            keys.push_back(input);
+            input.ki.dwFlags = KEYEVENTF_EXTENDEDKEY;  // '->' key (Send extended KEYDOWN) again
+            keys.push_back(input);
+            input.ki.dwFlags |= KEYEVENTF_KEYUP;       // '->' key (KEYUP) again
+            keys.push_back(input);
+        }
 
         SetActiveWindow(mcad);                                              // Make sure user hasn't clicked away
         UINT uSent = SendInput((UINT)keys.size(), keys.data(), sizeof(INPUT));    // send input to current window
@@ -416,7 +416,6 @@ INT_PTR CALLBACK AboutDlgProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPa
     {
         case WM_INITDIALOG :
         {
-            /**/
             hwndOwner = GetParent(hDlg);
 
             GetWindowRect(hwndOwner, &rcOwner);
@@ -468,7 +467,7 @@ INT_PTR CALLBACK CFDlgProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
     /**/
     HWND hwndOwner;
     RECT rc, rcDlg, rcOwner;
-    int iFindex = 0, iCindex = 0;
+    static int iFindex = 0, iCindex = 0;
     /**/
 
     switch (message)
@@ -509,20 +508,20 @@ INT_PTR CALLBACK CFDlgProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
             SendMessage(hwndCList, LB_SETITEMDATA, pos, (LPARAM)ic);
         }
         SendMessage(hwndCList, WM_SETREDRAW, TRUE, 0);     // Turn Redraw back on
-        SendMessage(hwndCList, LB_SETCURSEL, 0, 0);        // Set default to the first item in the list
-        iCategory = (int)SendMessage(hwndCList, LB_GETITEMDATA, 0, 0);
+        SendMessage(hwndCList, LB_SETCURSEL, iCindex, 0);  // Set Selector to last Category item clicked (init 0)
+        iCategory = (int)SendMessage(hwndCList, LB_GETITEMDATA, iCindex, 0);
 
         // Add items to the Function List
         HWND hwndFList = GetDlgItem(hDlg, IDC_LISTFUNC);   // Get the Function ListBox handle
         SendMessage(hwndFList, WM_SETREDRAW, FALSE, 0);    // Temporarily turn off Redraw
-        for (int i = 0; i < (int)CatVec[0].Functions.size(); i++)  // For all function in the first
+        for (int i = 0; i < (int)CatVec[iCategory].Functions.size(); i++)  // For all function in the first
         {
             int pos = (int)SendMessage(hwndFList, LB_ADDSTRING, 0, (LPARAM)CatVec[iCategory].Functions[i].Name.c_str());
             SendMessage(hwndFList, LB_SETITEMDATA, pos, (LPARAM)i);
         };
         SendMessage(hwndFList, WM_SETREDRAW, TRUE, 0);     // Turn Redraw back on
-        SendMessage(hwndFList, LB_SETCURSEL, 0, 0);        // Set Selector to first Function item
-        iFunction = (int)SendMessage(hwndFList, LB_GETITEMDATA, 0, 0);
+        SendMessage(hwndFList, LB_SETCURSEL, iFindex, 0);  // Set Selector to last Function item clicked (init 0)
+        iFunction = (int)SendMessage(hwndFList, LB_GETITEMDATA, iFindex, 0);
 
          //Set Text for the Function Call Edit Control (IDC_EDITFUNC) to the first function call string
         std::wstring tLocal = CatVec[iCategory].Functions[iFunction].LocalName;
@@ -588,18 +587,16 @@ INT_PTR CALLBACK CFDlgProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
             break;
 
 
-        //TODO: If IDINSERT pushed, pass selected function LocalName(plus params template) to Mathcad at the
-        //      cursor location.  We can do this by
-        //      1. Placing string in CLIPBOARD and sending Mathcad a WM_PASTE message
-        //         (Probably require capturing and replacing an user data on CLIPBOARD)
-        //      2. Send each character in the function name as a WM_KEYDOWN/WM_KEYUP pair through
-        //         the Windows messaging queue targeting the Mathcad Prime HWND (more tedious?
-        //         Might not support extended character set if needed.)
+        // If IDINSERT pushed, Set flag that a function was selected and should be sent when
+        //    the Dialog closes, then fall through to IDCANCEL, which closes the Dialog.
+        //    When flag is set, each character in the function name and parameter string will 
+        //    be sent as a WM_KEYDOWN/WM_KEYUP pair through the Win32 function SendInput.
+        //    The keystrokes will be received by the active Mathcad Prime HWND.
         case IDINSERT:                // User selected the Insert Button
-            SendFunction = true;      // Set SendFunction flag and ...
+            SendFunction = true;      //    Set SendFunction flag and ...
             [[fallthrough]];          //    fall through to IDCANCEL
         case IDCANCEL:                // User selected the Cancel button, do nothing and
-            EndDialog(hDlg, 1);       // close the Dialog Box.
+            EndDialog(hDlg, 1);       //    close the Dialog Box.
             return TRUE;
         }
 
