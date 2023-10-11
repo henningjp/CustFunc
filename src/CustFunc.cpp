@@ -361,19 +361,22 @@ LRESULT CALLBACK LowLevelKeyboardProc(int nCode, WPARAM wParam, LPARAM lParam)
             {
             case WM_SYSKEYDOWN:
             case WM_KEYDOWN:            // Check if any key was pressed - KEYDOWN
-
             {
-
                 // Check if F2 pressed and <Shift> key is also down; gets shift key state on the fly.
                 if (hookStruct->vkCode == VK_F2 && (GetKeyState(VK_SHIFT) & SHIFTED)) {
 
-                    // If Mathcad Window is active, Pop Custom Function Dialog Box here.
-                    DialogBox(hDLLglobal, MAKEINTRESOURCE(IDD_CFDIALOG), hwnd, CFDlgProc);
-                    //Get function string index set by DialogBox and SendInput to Mathcad window
-                    if(SendFunction)                                                 // If user pressed Insert button
-                        int ierr = SendFunction2Mathcad(hwnd, iCategory, iFunction); //    Send selected string to Mathcad
+                    if (CatVec.size() > 0)       // If there are XML files loaded in CatVec,
+                    {
+                        // Pop Custom Function Dialog Box here.
+                        DialogBox(hDLLglobal, MAKEINTRESOURCE(IDD_CFDIALOG), hwnd, CFDlgProc);
+                        //Get function string index set by DialogBox and SendInput to Mathcad window
+                        if (SendFunction)                                                // If user pressed Insert button
+                            int ierr = SendFunction2Mathcad(hwnd, iCategory, iFunction); //    Send selected string to Mathcad
+                    }
+                    else
+                        MessageBox(hwndDlg, L"There are no Custom Function XML files loaded.", L"Custom Function Panel", 0);
                     SendFunction = false;                                     // Reset SendFunction flag
-                }
+                }   // Do not return. the <F2> key might be for someone else.
 
                 // Check if <Ctrl><Shift>">" was pressed to insert "°F" at Mathcad Cursor Location
                 if (hookStruct->vkCode == VK_OEM_PERIOD && (GetKeyState(VK_SHIFT) & SHIFTED) && (GetKeyState(VK_CONTROL) & SHIFTED))
@@ -703,20 +706,6 @@ BOOL LoadDocs()    // Get DLL directory and the \docs directory underneath it
         fs::path fsName = DllPath;   // Assign DllPath string to an fs::path variable
         fs::path docsPath = fsName.parent_path().append("docs");  // This is the path we are looking for
 
-        // Build and display debug message box.  Can be deleted later.
-        if (cfDebug)
-        {
-            std::wstring msg = L"DLL Name = \n";
-            msg.append(fsName.wstring());
-            msg.append(L"\n\nPath = \n");
-            msg.append(fsName.parent_path().wstring());
-            msg.append(L"\n\nDocs Path = \n");
-            msg.append(docsPath.wstring());
-            MessageBox(hwndDlg, msg.c_str(), L"Getting DLL Directory", 0);
-        }
-
-        std::wstring dbgmsg = L"";
-        std::wstring xmlmsg = L"";
         std::wstring CatNew = L"";
         int iCat = -1;
         int iFunc = 0;
@@ -725,7 +714,7 @@ BOOL LoadDocs()    // Get DLL directory and the \docs directory underneath it
         Category tCat = { L"USER", tFuncVec };   // This is a temporary Category description, initialized to "USER"
         std::string tempString;
 
-        dbgmsg.append(L"The docs directory");
+        std::wstring dbgmsg = L"The docs directory";
         if ( fs::exists(docsPath) && fs::is_directory(docsPath))                                   // if "Custom Functions\docs" directory found
         {
             long int fc = (long int)std::count_if(fs::directory_iterator(docsPath), {}, isXML);          // Count XML files in it
@@ -753,7 +742,7 @@ BOOL LoadDocs()    // Get DLL directory and the \docs directory underneath it
                         if (eResult != tinyxml2::XML_SUCCESS)
                             PopXMLError(eResult);                                                          //   Pop an Error Message if not successful
 
-                        tinyxml2::XMLElement* p_root_element = doc.RootElement();                          // This is the <FUNCTIONS> Tag
+                        tinyxml2::XMLElement* p_root_element = doc.RootElement();                          // This should be the <FUNCTIONS> Tag
                         tinyxml2::XMLElement* p_function = p_root_element->FirstChildElement("function");  // First <function> Tag
 
                         while (p_function)                                                                 // While <function> Tag valid
@@ -777,7 +766,7 @@ BOOL LoadDocs()    // Get DLL directory and the \docs directory underneath it
                             if (NULL != p_function->FirstChildElement("params"))                           // if <params> Tag exists
                                 tFunc.Params = utf8_to_wchar(p_function->FirstChildElement("params")->GetText()); // Get <params> text (convert from utf-8)
                             else                                                                           // otherwise...
-                                tFunc.Params = L"0";                                                       //        Assume function takes (0)
+                                tFunc.Params = L"const";                                                   //        Assume this is a constant from a user function
 
                             if (NULL != p_function->FirstChildElement("description"))                      // if <description> Tag exists
                             {
@@ -793,7 +782,7 @@ BOOL LoadDocs()    // Get DLL directory and the \docs directory underneath it
                                 tFunc.Description = L"<no description provided>";
 
                             if (NULL != p_function->FirstChildElement("category"))                         // if <category> Tag exists
-                                CatNew = utf8_to_wchar(p_function->FirstChildElement("category")->GetText()); //    Get last read <category> text
+                                CatNew = utf8_to_wchar(p_function->FirstChildElement("category")->GetText()); //    Get <category> text
                             else                                                                           // otherwise
                                 CatNew = tCat.CatName;                                                     //       Assume previous function category (or default)
 
@@ -835,7 +824,7 @@ BOOL LoadDocs()    // Get DLL directory and the \docs directory underneath it
     }
     else
     {
-        return false;  // Return false if we can't get the path of the current DLL, but just in case...
+        return false;  // Return false if we can't get the path of the current DLL. Shouldn't happen, but just in case.
     }
 
     return true;
@@ -876,12 +865,12 @@ extern "C" BOOL WINAPI  DllEntryPoint (HINSTANCE hDLL, DWORD dwReason, LPVOID lp
             //    break;
 
             // Register User Function(s)
-            // ***  NOTE: Again, this DLL will probably not need any user functions,
+            // ***  NOTE: Again, this DLL will probably not register any user functions,
             // ***        but instead, will load any XML docs found under Custom Functions
             // ***        and install the Keyboard hook here when the DLL Process is attached.
 
             // Get DLL directory and the \docs directory underneath it
-            if (!LoadDocs()) break;    // If error, just break here and don't load the keyboard hooks.
+            if (LoadDocs())    // If error, just break here and don't load the keyboard hooks.
 
             //
             // Attach the Keyboard Hook here and register the Keyboard Hook Callback Process

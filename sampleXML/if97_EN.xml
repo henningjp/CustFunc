@@ -1,0 +1,389 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<!-- Custom Function file for the CoolProp/IF97 wrapper Add-in to Mathcad found at https://github.com/CoolProp/IF97 -->
+<!-- To use, place this XML file in the Mathcad Prime installation directory under "Custom Functions/docs/".        -->
+<FUNCTIONS>
+	<!-- Below are the entries for the if97 saturation curve functions -->
+  <function>
+    <name>tsatp</name>
+    <local_name>if97_tsatp</local_name>
+    <params>p</params>
+    <category>IF97 (Water Properties)</category>
+    <description>Calculates saturated temperature [K] as a function of pressure, p [MPa].\nNOTE: Provide parameters without Mathcad units attached, but scaled to the units specified here.</description>
+  </function>
+  <function>
+    <name>psatt</name>
+    <local_name>if97_psatt</local_name>
+    <params>T</params>
+    <category>IF97 (Water Properties)</category>
+    <description>Calculates saturated pressure [MPa] as a function of temperature, T [K].\nNOTE: Provide parameters without Mathcad units attached, but scaled to the units specified here.</description>
+  </function>
+  <function>
+    <name>tcrit</name>
+    <local_name>if97_tcrit</local_name>
+    <params>0</params>
+    <category>IF97 (Water Properties)</category>
+    <description>Returns the saturated temperature [K] at the critial point. A dummy parameter must be provided (e.g. 0).</description>
+  </function>
+  <function>
+    <name>ttrip</name>
+    <local_name>if97_ttrip</local_name>
+    <params>0</params>
+    <category>IF97 (Water Properties)</category>
+    <description>Returns the saturated temperature [K] at the triple point. A dummy parameter must be provided (e.g. 0).</description>
+  </function>
+  <function>
+    <name>pcrit</name>
+    <local_name>if97_pcrit</local_name>
+    <params>0</params>
+    <category>IF97 (Water Properties)</category>
+    <description>Calculates saturated pressure [MPa] at the critial point. A dummy parameter must be provided (e.g. 0).</description>
+  </function>
+  <function>
+    <name>ptrip</name>
+    <local_name>if97_ptrip</local_name>
+    <params>0</params>
+    <category>IF97 (Water Properties)</category>
+    <description>Calculates saturated pressure [MPa] at the triple point. A dummy parameter must be provided (e.g. 0).</description>
+  </function>
+  <function>
+    <name>t23</name>
+    <local_name>if97_t23</local_name>
+    <params>p</params>
+    <category>IF97 (Water Properties)</category>
+    <description>Calculates Temperature [K] along the Region 2/3 boundary as a function of pressure, p [MPa].\nNOTE: Provide parameters without Mathcad units attached, but scaled to the units specified here.</description>
+  </function>
+  <function>
+    <name>p23</name>
+    <local_name>if97_p23</local_name>
+    <params>T</params>
+    <category>IF97 (Water Properties)</category>
+    <description>Calculates Pressure [MPa] along the Region 2/3 boundary as a function of temperature, T [K].\nNOTE: Provide parameters without Mathcad units attached, but scaled to the units specified here.</description>
+  </function>
+  <!-- Below are the entries for the basic if97 thermodynamic functions -->
+  <function>
+    <name>vtp</name>
+    <local_name>if97_vtp</local_name>
+    <params>T,p</params>
+    <category>IF97 (Water Properties)</category>
+    <description>Calculates the specific volume [m³/kg] as a function of T [K] and p [MPa].\nNOTE: Provide parameters without Mathcad units attached, but scaled to the units specified here.</description>
+  </function>
+  <function>
+    <name>rhotp</name>
+    <local_name>if97_rhotp</local_name>
+    <params>T,p</params>
+    <category>IF97 (Water Properties)</category>
+    <description>Calculates the mass density [kg/m³] as a function of T [K] and p [MPa].\nNOTE: Provide parameters without Mathcad units attached, but scaled to the units specified here.</description>
+  </function>
+  <function>
+    <name>htp</name>
+    <local_name>if97_htp</local_name>
+    <params>T,p</params>
+    <category>IF97 (Water Properties)</category>
+    <description>Calculates the mass enthalpy [kJ/kg] as a function of T [K] and p [MPa].\nNOTE: Provide parameters without Mathcad units attached, but scaled to the units specified here.</description>
+  </function>
+  <function>
+    <name>utp</name>
+    <local_name>if97_utp</local_name>
+    <params>T,p</params>
+    <category>IF97 (Water Properties)</category>
+    <description>Calculates the mass internal energy [kJ/kg] as a function of T [K] and p [MPa].\nNOTE: Provide parameters without Mathcad units attached, but scaled to the units specified here.</description>
+  </function>
+  <function>
+    <name>stp</name>
+    <local_name>if97_stp</local_name>
+    <params>T,p</params>
+    <category>IF97 (Water Properties)</category>
+    <description>Calculates the mass entropy [kJ/kg-K] as a function of T [K] and p [MPa].\nNOTE: Provide parameters without Mathcad units attached, but scaled to the units specified here.</description>
+  </function>
+  <function>
+    <name>cptp</name>
+    <local_name>if97_cptp</local_name>
+    <params>T,p</params>
+    <category>IF97 (Water Properties)</category>
+    <description>Calculates the isobaric specific heat [kJ/kg-K] as a function of T [K] and p [MPa].\nNOTE: Provide parameters without Mathcad units attached, but scaled to the units specified here.</description>
+  </function>
+  <function>
+    <name>cvtp</name>
+    <local_name>if97_cvtp</local_name>
+    <params>T,p</params>
+    <category>IF97 (Water Properties)</category>
+    <description>Calculates the isochoric specific heat [kJ/kg-K] as a function of T [K] and p [MPa].\nNOTE: Provide parameters without Mathcad units attached, but scaled to the units specified here.</description>
+  </function>
+  <function>
+    <name>wtp</name>
+    <local_name>if97_wtp</local_name>
+    <params>T,p</params>
+    <category>IF97 (Water Properties)</category>
+    <description>Calculates the speed of sound [m/s] as a function of T [K] and p [MPa].\nNOTE: Provide parameters without Mathcad units attached, but scaled to the units specified here.</description>
+  </function>
+  <!-- Below are the entries for the thermodynamic if97 saturated liquid/vapor functions -->
+  <function>
+    <name>vf</name>
+    <local_name>if97_vf</local_name>
+    <params>p</params>
+    <category>IF97 (Water Properties)</category>
+    <description>Calculates the saturated liquid specific volume [m³/kg] as a function of pressure, p [MPa].\nNOTE: Provide parameters without Mathcad units attached, but scaled to the units specified here.</description>
+  </function>
+  <function>
+    <name>vg</name>
+    <local_name>if97_vg</local_name>
+    <params>p</params>
+    <category>IF97 (Water Properties)</category>
+    <description>Calculates the saturated vapor specific volume [m³/kg] as a function of pressure, p [MPa].\nNOTE: Provide parameters without Mathcad units attached, but scaled to the units specified here.</description>
+  </function>
+  <function>
+    <name>rhof</name>
+    <local_name>if97_rhof</local_name>
+    <params>p</params>
+    <category>IF97 (Water Properties)</category>
+    <description>Calculates the saturated liquid density [kg/m³] as a function of pressure, p [MPa].\nNOTE: Provide parameters without Mathcad units attached, but scaled to the units specified here.</description>
+  </function>
+  <function>
+    <name>rhog</name>
+    <local_name>if97_rhog</local_name>
+    <params>p</params>
+    <category>IF97 (Water Properties)</category>
+    <description>Calculates the saturated vapor density [kg/m³] as a function of pressure, p [MPa].\nNOTE: Provide parameters without Mathcad units attached, but scaled to the units specified here.</description>
+  </function>
+  <function>
+    <name>hf</name>
+    <local_name>if97_hf</local_name>
+    <params>p</params>
+    <category>IF97 (Water Properties)</category>
+    <description>Calculates the saturated liquid enthalpy [kJ/kg] as a function of pressure, p [MPa].\nNOTE: Provide parameters without Mathcad units attached, but scaled to the units specified here.</description>
+  </function>
+  <function>
+    <name>hg</name>
+    <local_name>if97_hg</local_name>
+    <params>p</params>
+    <category>IF97 (Water Properties)</category>
+    <description>Calculates the saturated vapor enthalpy [kJ/kg] as a function of pressure, p [MPa].\nNOTE: Provide parameters without Mathcad units attached, but scaled to the units specified here.</description>
+  </function>
+  <function>
+    <name>uf</name>
+    <local_name>if97_uf</local_name>
+    <params>p</params>
+    <category>IF97 (Water Properties)</category>
+    <description>Calculates the saturated liquid internal energy [kJ/kg] as a function of pressure, p [MPa].\nNOTE: Provide parameters without Mathcad units attached, but scaled to the units specified here.</description>
+  </function>
+  <function>
+    <name>ug</name>
+    <local_name>if97_ug</local_name>
+    <params>p</params>
+    <category>IF97 (Water Properties)</category>
+    <description>Calculates the saturated vapor internal energy [kJ/kg] as a function of pressure, p [MPa].\nNOTE: Provide parameters without Mathcad units attached, but scaled to the units specified here.</description>
+  </function>
+  <function>
+    <name>sf</name>
+    <local_name>if97_sf</local_name>
+    <params>p</params>
+    <category>IF97 (Water Properties)</category>
+    <description>Calculates the saturated liquid entropy [kJ/kg-K] as a function of pressure, p [MPa].\nNOTE: Provide parameters without Mathcad units attached, but scaled to the units specified here.</description>
+  </function>
+  <function>
+    <name>sg</name>
+    <local_name>if97_sg</local_name>
+    <params>p</params>
+    <category>IF97 (Water Properties)</category>
+    <description>Calculates the saturated vapor entropy [kJ/kg-K] as a function of pressure, p [MPa].\nNOTE: Provide parameters without Mathcad units attached, but scaled to the units specified here.</description>
+  </function>
+  <function>
+    <name>cpf</name>
+    <local_name>if97_cpf</local_name>
+    <params>p</params>
+    <category>IF97 (Water Properties)</category>
+    <description>Calculates the saturated liquid isobaric specific heat [kJ/kg-K] as a function of pressure, p [MPa].\nNOTE: Provide parameters without Mathcad units attached, but scaled to the units specified here.</description>
+  </function>
+  <function>
+    <name>cpg</name>
+    <local_name>if97_cpg</local_name>
+    <params>p</params>
+    <category>IF97 (Water Properties)</category>
+    <description>Calculates the saturated vapor isobaric specific heat [kJ/kg-K] as a function of pressure, p [MPa].\nNOTE: Provide parameters without Mathcad units attached, but scaled to the units specified here.</description>
+  </function>
+  <function>
+    <name>cvf</name>
+    <local_name>if97_cvf</local_name>
+    <params>T,p</params>
+    <category>IF97 (Water Properties)</category>
+    <description>Calculates the saturated liquid isochoric specific heat [kJ/kg-K] as a function of pressure, p [MPa].\nNOTE: Provide parameters without Mathcad units attached, but scaled to the units specified here.</description>
+  </function>
+  <function>
+    <name>cvg</name>
+    <local_name>if97_cvg</local_name>
+    <params>p</params>
+    <category>IF97 (Water Properties)</category>
+    <description>Calculates the saturated vapor isochoric specific heat [kJ/kg-K] as a function of pressure, p [MPa].\nNOTE: Provide parameters without Mathcad units attached, but scaled to the units specified here.</description>
+  </function>
+  <function>
+    <name>wf</name>
+    <local_name>if97_wf</local_name>
+    <params>p</params>
+    <category>IF97 (Water Properties)</category>
+    <description>Calculates the saturated liquid speed of sound [m/s] as a function of pressure, p [MPa].\nNOTE: Provide parameters without Mathcad units attached, but scaled to the units specified here.</description>
+  </function>
+  <function>
+    <name>wg</name>
+    <local_name>if97_wg</local_name>
+    <params>p</params>
+    <category>IF97 (Water Properties)</category>
+    <description>Calculates the saturated vapor speed of sound [m/s] as a function of pressure, p [MPa].\nNOTE: Provide parameters without Mathcad units attached, but scaled to the units specified here.</description>
+  </function>
+  <!-- Below are the entries for the if97 transport functions -->
+  <function>
+      <name>mutp</name>
+      <local_name>if97_mutp</local_name>
+      <params>T,p</params>
+      <category>IF97 (Water Properties)</category>
+      <description>Calculates the viscosity [μPa-s] as a function of T [K] and p [MPa].\nNOTE: Provide parameters without Mathcad units attached, but scaled to the units specified here.</description>
+  </function>
+  <function>
+      <name>muf</name>
+      <local_name>if97_muf</local_name>
+      <params>p</params>
+      <category>IF97 (Water Properties)</category>
+      <description>Calculates the saturated liquid viscosity [μPa-s] as a function of pressure, p [MPa].\nNOTE: Provide parameters without Mathcad units attached, but scaled to the units specified here.</description>
+  </function>
+  <function>
+      <name>mug</name>
+      <local_name>if97_mug</local_name>
+      <params>p</params>
+      <category>IF97 (Water Properties)</category>
+      <description>Calculates the saturated vapor viscosity [μPa-s] as a function of pressure, p [MPa].\nNOTE: Provide parameters without Mathcad units attached, but scaled to the units specified here.</description>
+  </function>
+  <function>
+      <name>ktp</name>
+      <local_name>if97_ktp</local_name>
+      <params>T,p</params>
+      <category>IF97 (Water Properties)</category>
+      <description>Calculates the thermal conductivity [kW/m-K] as a function of T [K] and p [MPa].\nNOTE: Provide parameters without Mathcad units attached, but scaled to the units specified here.</description>
+  </function>
+  <function>
+      <name>kf</name>
+      <local_name>if97_kf</local_name>
+      <params>p</params>
+      <category>IF97 (Water Properties)</category>
+      <description>Calculates the saturated liquid thermal conductivity [kW/m-K] as a function of pressure, p [MPa].\nNOTE: Provide parameters without Mathcad units attached, but scaled to the units specified here.</description>
+  </function>
+  <function>
+      <name>kg</name>
+      <local_name>if97_kg</local_name>
+      <params>p</params>
+      <category>IF97 (Water Properties)</category>
+      <description>Calculates the saturated vapor thermal conductivity [kW/m-K] as a function of pressure, p [MPa].\nNOTE: Provide parameters without Mathcad units attached, but scaled to the units specified here.</description>
+  </function>
+  <function>
+      <name>sigma</name>
+      <local_name>if97_sigma</local_name>
+      <params>T</params>
+      <category>IF97 (Water Properties)</category>
+      <description>Calculates the surface tension [N/m] as a function of temperature, T [K].\nNOTE: Provide parameters without Mathcad units attached, but scaled to the units specified here.</description>
+  </function>
+  <!-- Below are the entries for the backwards if97 functions -->
+  <function>
+      <name>tph</name>
+      <local_name>if97_tph</local_name>
+      <params>p,h</params>
+      <category>IF97 (Water Properties)</category>
+      <description>Calculates the temperature, T [K], as a function of p [MPa] and mass enthalpy, h, [kJ/kg].\nNOTE: Provide parameters without Mathcad units attached, but scaled to the units specified here.</description>
+  </function>
+  <function>
+    <name>tps</name>
+    <local_name>if97_tps</local_name>
+    <params>p,s</params>
+    <category>IF97 (Water Properties)</category>
+    <description>Calculates the temperature, T [K], as a function of p [MPa] and mass entropy, s, [kJ/kg-K].\nNOTE: Provide parameters without Mathcad units attached, but scaled to the units specified here.</description>
+  </function>
+  <function>
+      <name>ths</name>
+      <local_name>if97_ths</local_name>
+      <params>h,s</params>
+      <category>IF97 (Water Properties)</category>
+      <description>Calculates the temperature, T [K], as a function of mass enthalpy, h [kJ/kg], and mass entropy, s [kJ/kg-K].\nNOTE: Provide parameters without Mathcad units attached, but scaled to the units specified here.</description>
+  </function>
+  <function>
+      <name>phs</name>
+      <local_name>if97_phs</local_name>
+      <params>h,s</params>
+      <category>IF97 (Water Properties)</category>
+      <description>Calculates the pressure, p [MPa], as a function of mass enthalpy, h [kJ/kg], and mass entropy, s [kJ/kg-K].\nNOTE: Provide parameters without Mathcad units attached, but scaled to the units specified here.</description>
+  </function>
+  <!-- Below are the entries for if97 utility functions -->
+  <function>
+      <name>getvers</name>
+      <local_name>if97_getvers</local_name>
+      <params>0</params>
+      <category>IF97 (Water Properties)</category>
+      <description>Returns the version of the IF97 implementation code. Takes a "dummy" parameter that can be (0).</description>
+  </function>
+  <function>
+      <name>xph</name>
+      <local_name>if97_xph</local_name>
+      <params>p, h</params>
+      <category>IF97 (Water Properties)</category>
+      <description>Returns the steam quality, x, as a function of pressure, p [MPa], and mass enthalpy, h [kJ/kg].\nNOTE: Provide parameters without Mathcad units attached, but scaled to the units specified here.</description>
+  </function>
+  <function>
+      <name>xps</name>
+      <local_name>if97_xps</local_name>
+      <params>p,s</params>
+      <category>IF97 (Water Properties)</category>
+      <description>Returns the steam quality, x, as a function of pressure, p [MPa], and mass entropy, s [kJ/kg-K].\nNOTE: Provide parameters without Mathcad units attached, but scaled to the units specified here.</description>
+  </function>
+  <function>
+      <name>xpu</name>
+      <local_name>if97_xpu</local_name>
+      <params>p,u</params>
+      <category>IF97 (Water Properties)</category>
+      <description>Returns the steam quality, x, as a function of pressure, p [MPa], and mass internal energy, u [kJ/kg].\nNOTE: Provide parameters without Mathcad units attached, but scaled to the units specified here.</description>
+  </function>
+  <function>
+      <name>xpv</name>
+      <local_name>if97_xpv</local_name>
+      <params>p,v</params>
+      <category>IF97 (Water Properties)</category>
+      <description>Returns the steam quality, x, as a function of pressure, p [MPa], and specific volume, v [m³/kg].\nNOTE: Provide parameters without Mathcad units attached, but scaled to the units specified here.</description>
+  </function>
+  <function>
+      <name>xprho</name>
+      <local_name>if97_xprho</local_name>
+      <params>p,ρ</params>
+      <category>IF97 (Water Properties)</category>
+      <description>Returns the steam quality, x, as a function of pressure, p [MPa], and mass density, ρ [kg/m³].\nNOTE: Provide parameters without Mathcad units attached, but scaled to the units specified here.</description>
+  </function>
+  <function>
+      <name>hpx</name>
+      <local_name>if97_hpx</local_name>
+      <params>p,x</params>
+      <category>IF97 (Water Properties)</category>
+      <description>Returns the mass enthalpy, h [kJ/kg], as a function of pressure, p [MPa], and steam quality, x, within the vapor dome.\nNOTE: Provide parameters without Mathcad units attached, but scaled to the units specified here.</description>
+  </function>
+  <function>
+      <name>spx</name>
+      <local_name>if97_spx</local_name>
+      <params>p,x</params>
+      <category>IF97 (Water Properties)</category>
+      <description>Returns the mass entropy, s [kJ/kg-K], as a function of pressure, p [MPa], and steam quality, x, within the vapor dome.\nNOTE: Provide parameters without Mathcad units attached, but scaled to the units specified here.</description>
+  </function>
+  <function>
+      <name>upx</name>
+      <local_name>if97_upx</local_name>
+      <params>p,x</params>
+      <category>IF97 (Water Properties)</category>
+      <description>Returns the mass internal engergy, u [kJ/kg], as a function of pressure, p [MPa], and steam quality, x, within the vapor dome.\nNOTE: Provide parameters without Mathcad units attached, but scaled to the units specified here.</description>
+  </function>
+  <function>
+      <name>vpx</name>
+      <local_name>if97_vpx</local_name>
+      <params>p,x</params>
+      <category>IF97 (Water Properties)</category>
+      <description>Returns the specific volume, v [m³/kg], as a function of pressure, p [MPa], and steam quality, x, within the vapor dome.\nNOTE: Provide parameters without Mathcad units attached, but scaled to the units specified here.</description>
+  </function>
+  <function>
+      <name>rhopx</name>
+      <local_name>if97_rhopx</local_name>
+      <params>p,x</params>
+      <category>IF97 (Water Properties)</category>
+      <description>Returns the mass density, rho [kg/m³], as a function of pressure, p [MPa], and steam quality, x, within the vapor dome.\nNOTE: Provide parameters without Mathcad units attached, but scaled to the units specified here.</description>
+  </function>
+</FUNCTIONS>

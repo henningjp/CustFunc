@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Custom Function file for the Mathcad Prime Demo User Pack functions found in the installed Custom Functions folder. -->
+<!-- To use, compie and build the UserPack demo functions and place the userpack.DLL in the Custom Functins folder. Then -->
+<!-- place this XML file in the Mathcad Prime installation directory under "Custom Functions/docs/".                     -->
+<FUNCTIONS>
+	<!-- Below are the demo UserPack functions -->
+    <function>
+        <name>realsum</name>
+        <local_name>realsum</local_name>
+        <params>a,b</params>
+        <category>User Pack</category>
+        <description>Calculates the sum of two real variables, a and b.</description>
+    </function>
+    <function>
+        <name>transpose</name>
+        <local_name>transpose</local_name>
+        <params>A</params>
+        <category>User Pack</category>
+        <description>Calculates the transpose of a matrix, A.</description>
+    </function>
+</FUNCTIONS>
