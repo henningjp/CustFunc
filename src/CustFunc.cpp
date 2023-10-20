@@ -7,7 +7,7 @@
 #include <cstdint>
 #include <filesystem>
 // Using TinyXML2 from: https://github.com/leethomason/tinyxml2 
-// There's some new VC++ XML functionality, but TinyXML2 is far easier to use, for now.
+// There are some newer VC++ XML codes, but TinyXML2 is far easier to use, for now.
 #include <tinyxml2.h>
 
 namespace fs = std::filesystem;
@@ -26,7 +26,7 @@ enum { MC_STRING = STRING };  // substitute enumeration variable MC_STRING for S
 
 
 // RefProp Mathcad Add-in Version
-std::string CFVersion = "0.1";       // Mathcad Add-in version number
+std::wstring CFVersion = L"1.0";       // Mathcad Add-in version number
 
 // Setup Dialog Window for debugging
 HWND hwndDlg;  // Generic Dialog handle for pop-up message boxes (MessageBox) when needed
@@ -442,6 +442,9 @@ INT_PTR CALLBACK AboutDlgProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPa
                 rcOwner.top + (rc.bottom / 2),
                 0, 0,          // Ignores size arguments. 
                 SWP_NOSIZE);
+            std::wstring strTitle = CFVersion;
+            strTitle.insert(0, L"==> CustFunc v").append(L" <==");
+            SetWindowText(GetDlgItem(hDlg, IDC_TITLE), (LPCWSTR) strTitle.c_str() );
 
             return TRUE;
         }
@@ -534,6 +537,10 @@ INT_PTR CALLBACK CFDlgProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
        //Set Text for the Description Edit Control (IDC_EDITDESC) to the first function description string
         SetWindowText(GetDlgItem(hDlg, IDC_EDITDESC), (LPCWSTR)CatVec[iCategory].Functions[iFunction].Description.c_str());
 
+        //Put image on Info Button
+        HICON hIcon = LoadIcon( hDLLglobal , MAKEINTRESOURCE(IDI_ICON1) );
+        SendMessage(GetDlgItem(hDlg, IDC_ABOUTBTN), BM_SETIMAGE, (WPARAM)IMAGE_ICON, (LPARAM)hIcon);
+
         // Set input focus to the Category List Box
         SetFocus(hwndCList);
 
@@ -589,6 +596,15 @@ INT_PTR CALLBACK CFDlgProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
             return FALSE;   // return FALSE (0) - Local action, don't close the window.
             break;
 
+        case IDC_ABOUTBTN:           // Pop-up the AboutBox window
+            {
+                // Open the About Box over top of the Instert Custom Function Dialog (hDlg)
+                DialogBox(hDLLglobal, MAKEINTRESOURCE(IDD_ABOUTBOX), hDlg, AboutDlgProc);
+                // Set input focus to the Category List Box
+                SetFocus(GetDlgItem(hDlg, IDC_LISTFUNC));
+            }
+            return FALSE; // return FALSE (0) - Local action, don't close the window.
+            break;
 
         // If IDINSERT pushed, Set flag that a function was selected and should be sent when
         //    the Dialog closes, then fall through to IDCANCEL, which closes the Dialog.

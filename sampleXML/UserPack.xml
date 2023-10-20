@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!-- Custom Function file for the Mathcad Prime Demo User Pack functions found in the installed Custom Functions folder. -->
-<!-- To use, compie and build the UserPack demo functions and place the userpack.DLL in the Custom Functins folder. Then -->
-<!-- place this XML file in the Mathcad Prime installation directory under "Custom Functions/docs/".                     -->
+<!-- Custom Function file for the Mathcad Prime Demo User Pack functions found in the installed Custom Functions folder.  -->
+<!-- To use, compile and build the UserPack demo functions and place the userpack.DLL in the Custom Functins folder. Then -->
+<!-- place this XML file in the Mathcad Prime installation directory under "Custom Functions\docs\".                      -->
 <FUNCTIONS>
 	<!-- Below are the demo UserPack functions -->
     <function>

@@ -27,11 +27,14 @@
     </ResourceCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\includes\resource.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="..\includes\tinyxml2.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="..\resource\resource.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="..\resource\icons\Button-Info.ico" />
   </ItemGroup>
 </Project>

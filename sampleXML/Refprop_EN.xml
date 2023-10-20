@@ -543,7 +543,10 @@
 		<description>Returns the fluid enthalpy in any phase [kJ/kg].  The parameters, t and h, are the input temperature [K] and entropy [kJ/kg-K].  This function performs an iterative search for the state temperature and may be slower than other functions. The parameter, flstr, is a string containing the Refprop fluid file name.</description>
 		<help_topic>hps</help_topic>
 	</function>
-	<!-- High Level API Functions (REFPROP 10+) -->
+	<!--              High Level API Functions (REFPROP 10+)                 -->
+	<!-- These High Level API calls are preferred over the Legacy functions, -->
+	<!-- but require REFPROP 10 or higher.  Errors will be thrown if a       -->
+	<!-- suitable REFPROP version is not loaded.                             -->
 	<function>
 		<name>rp_REFPROP</name>
 		<params>"hFld","hIn","hOut",a,b</params>

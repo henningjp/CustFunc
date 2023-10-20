@@ -24,7 +24,7 @@
         <category>CoolProp</category>
         <description>Calculates the state dependent property specified by "Output Name" for Humid Air given the input properties, Value 1, Value 2, and Value 3.  Output and Input Names are strings representing a thermodynamic property, i.e. "T", "P", "D", "H", "C", "V", "L", "Q", etc.  One of these Input Names and values is typically "R" specifying a relative humidity.  For a complete list of valid property names, see the CoolProp documentation at www.coolprop.org.</description>
     </function>
-    <!-- Below are the entries for the CoolProp Low-Level functions -->
+    <!-- Below are the entries for a few of the CoolProp Low-Level functions -->
     <function>
         <name>get_global_param_string</name>
         <local_name>get_global_param_string</local_name>
