@@ -100,12 +100,13 @@ These allow XML files to be provided not only for companion DLLs, but also for i
 
 To install CustFunc in your local Mathcad Prime installation:  
 
-1. Download the latest release zip file from this repository.
-2. Unzip the release file.
+1. In the right column of this repository, open the latest Release page.
+2. Download the `CustFunc.dll` to your local machine (typically in Downloads directory)
 3. Copy the `CustFunc.dll` file to Mathcad Prime's `Custom Functions` directory.
-4. Copy sample XML files (or custom XML files) into a `Custom Functions\docs` directory.
-5. Restart Mathcad Prime.
-6. On any worksheet, press `<Shift><F2>` to pop up the **Insert Custom Functions** panel 
+4. Downlaod any of the sample XML files from the repository or extract them from the SourceCode.zip file for this release.
+5. Copy sample XML files (or custom XML files) into a `Custom Functions\docs` directory.
+6. Restart Mathcad Prime.
+7. On any worksheet, press `<Shift><F2>` to pop up the **Insert Custom Functions** panel.  At least one XML file must exist in the `docs` directory or an error message will pop up indicating that no XML files were found.
 
 # Code Enhancements
 
