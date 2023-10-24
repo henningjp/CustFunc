@@ -79,7 +79,7 @@ As many functions as needed for a specific DLL can be loaded in this XML file, t
 
 </details>
 
-A number of sample XML files is provided for a few Mathcad Prime add-in custom function libraries.  These include function listings for: 
+A number of sample XML files are provided for a few Mathcad Prime add-in custom function libraries.  These include function listings for: 
 - **CoolProp** - Fluid properties library found at https://github.com/CoolProp/CoolProp
 - **CoolProp/IF97** - Water/Steam properties library found at https://github.com/CoolProp/IF97
 - **NIST REFPROP** - Fluid/Mixture properties library found at https://github.com/usnistgov/REFPROP-wrappers
