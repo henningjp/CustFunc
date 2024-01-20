@@ -26,11 +26,11 @@ This information has to be memorized or looked up in a reference document outsid
 
 # The CustFunc Add-in
 
-The **CustFunc** add-in DLL does not actually register any new functions, but provides interface integration functionality for any other Custom Function DLLs that are loaded.  The built-in functions, as mentioned above, can be typed into a math region or inserted from the **_Functions_** panel.  The **_Functions_** panel is opened from Functions ribbon (the All Functions button) or by pressing the hot-key, `<F2>`.  **CustFunc** uses the hot-key combination `<Shift><F2>` to launch an **_Insert Custom Function_** dialog box, providing the user with a list of categorized Custom Functions for insertion onto the active worksheet at the current cursor location.  The **_Insert Custom Function_** dialog box will be populated with any XML function files found in Mathcad Prime's installation directory under `"Custom Functions\docs"`.
+The **CustFunc** add-in DLL does not actually register any new functions, but provides interface integration functionality for any other Custom Function DLLs that are loaded.  Mathcad Prime's built-in functions, as mentioned above, can be typed into a math region or inserted from the **_Functions_** panel.  The **_Functions_** panel is opened from Functions ribbon (the All Functions button) or by pressing the hot-key, `<F2>`.  **CustFunc** uses the hot-key combination `<Shift><F2>` to launch an **_Insert Custom Function_** dialog box, providing the user with a list of categorized Custom Functions for insertion onto the active worksheet at the current cursor location.  The **_Insert Custom Function_** dialog box will be populated with any XML function files found in Mathcad Prime's installation directory under `"Custom Functions\docs"`.
 
 ![Insert Custom Functions Panel](https://github.com/henningjp/CustFunc/blob/master/images/CustFuncPanel.png)
 
-This modal dialog box is patterned after the legacy `Insert Function` panel.  In addition to the categorized list of functions and the ability to insert them into any worksheet, when the user browsed to and selects Function Name from the list, the actual function text (including expected parameters) is displayed on the dialog followed by a detailed text description of the functions behavior and expected parameters.
+This modal dialog box is patterned after the legacy `Insert Function` panel.  In addition to the categorized list of functions and the ability to insert them into any worksheet, when the user browses to and selects a Function Name from the list, the actual function text (including expected parameters) is displayed on the dialog followed by a detailed text description of the functions behavior and expected parameters.
 
 # Creating XML Function Files
 
@@ -92,9 +92,9 @@ There are a few enhancements that CustFunc offers over legacy behavior.  These i
 
 - The extended character set, including greek symbols (e.g. α, ε, Δ, etc.) and other technical symbols, operators, and diacritical marks, can be entered into the function name, local_name, and/or description.  The easiest way to enter these symbols is by copying them from the Microsoft Character Map application and pasting into the XML sub-elements. 
 - Textual subscripts can be entered by embedding a period in the function's <local_name> element. 
-- Constant values can be input with no parameters by omitting the <parameters> element including a parameter of "const". 
+- Constant values can be input with no parameters by omitting the `<parameters>` element or using a `<parameter>` value of "const". 
 
-These allow XML files to be provided not only for companion DLLs, but also for included worksheets that contain user functions and constants (entered with a <parameter> element of "const").
+These allow XML files to be provided not only for companion DLLs, but also for included worksheets that contain user functions and constants (entered with a `<parameter>` element of "const").
 
 # Installing CustFunc
 
