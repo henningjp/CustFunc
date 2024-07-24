@@ -26,7 +26,7 @@ enum { MC_STRING = STRING };  // substitute enumeration variable MC_STRING for S
 
 
 // RefProp Mathcad Add-in Version
-std::wstring CFVersion = L"1.0";       // Mathcad Add-in version number
+std::wstring CFVersion = L"1.1";       // Mathcad Add-in version number
 
 // Setup Dialog Window for debugging
 HWND hwndDlg;  // Generic Dialog handle for pop-up message boxes (MessageBox) when needed
@@ -362,8 +362,8 @@ LRESULT CALLBACK LowLevelKeyboardProc(int nCode, WPARAM wParam, LPARAM lParam)
             case WM_SYSKEYDOWN:
             case WM_KEYDOWN:            // Check if any key was pressed - KEYDOWN
             {
-                // Check if F2 pressed and <Shift> key is also down; gets shift key state on the fly.
-                if (hookStruct->vkCode == VK_F2 && (GetKeyState(VK_SHIFT) & SHIFTED)) {
+                // Check if F3 pressed; gets shift key state on the fly.
+                if (hookStruct->vkCode == VK_F3) {    // && (GetKeyState(VK_SHIFT) & SHIFTED) <== Switch from <Shift>F2 to F3
 
                     if (CatVec.size() > 0)       // If there are XML files loaded in CatVec,
                     {

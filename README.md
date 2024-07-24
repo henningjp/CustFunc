@@ -24,9 +24,9 @@ For DLLs containing a large number of Custom Functions, this means that the user
 This information has to be memorized or looked up in a reference document outside of Mathcad Prime for every additional function and seriously degrades the usefulness of the Custom Functions capability.  
 </details>
 
-# The CustFunc Add-in
+# The CustFunc Add-in v1.1
 
-The **CustFunc** add-in DLL does not actually register any new functions, but provides interface integration functionality for any other Custom Function DLLs that are loaded.  Mathcad Prime's built-in functions, as mentioned above, can be typed into a math region or inserted from the **_Functions_** panel.  The **_Functions_** panel is opened from Functions ribbon (the All Functions button) or by pressing the hot-key, `<F2>`.  **CustFunc** uses the hot-key combination `<Shift><F2>` to launch an **_Insert Custom Function_** dialog box, providing the user with a list of categorized Custom Functions for insertion onto the active worksheet at the current cursor location.  The **_Insert Custom Function_** dialog box will be populated with any XML function files found in Mathcad Prime's installation directory under `"Custom Functions\docs"`.
+The **CustFunc** add-in DLL does not actually register any new functions, but provides interface integration functionality for any other Custom Function DLLs that are loaded.  Mathcad Prime's built-in functions, as mentioned above, can be typed into a math region or inserted from the **_Functions_** panel.  The **_Functions_** panel is opened from Functions ribbon (the All Functions button) or by pressing the hot-key, `<F2>`.  **CustFunc** uses the hot-key `<F3>` to launch an **_Insert Custom Function_** dialog box, providing the user with a list of categorized Custom Functions for insertion onto the active worksheet at the current cursor location.  The **_Insert Custom Function_** dialog box will be populated with any XML function files found in Mathcad Prime's installation directory under `"Custom Functions\docs"`.
 
 ![Insert Custom Functions Panel](https://github.com/henningjp/CustFunc/blob/master/images/CustFuncPanel.png)
 
@@ -106,7 +106,7 @@ To install CustFunc in your local Mathcad Prime installation:
 4. Downlaod any of the sample XML files from the repository or extract them from the SourceCode.zip file for this release.
 5. Copy sample XML files (or custom XML files) into a `Custom Functions\docs` directory.
 6. Restart Mathcad Prime.
-7. On any worksheet, press `<Shift><F2>` to pop up the **Insert Custom Functions** panel.  At least one XML file must exist in the `docs` directory or an error message will pop up indicating that no XML files were found.
+7. On any worksheet, press `<F3>` to pop up the **Insert Custom Functions** panel.  At least one XML file must exist in the `docs` directory or an error message will pop up indicating that no XML files were found.
 
 # Code Enhancements
 
@@ -115,3 +115,8 @@ Contributions to this code repository are welcome and encouraged through:
 * Issue reporting under Issues
 * Code enhancement suggestions and/or pull requests
 * Addition of sample XML file for any other public add-in DLLs
+
+# Change Log
+
+- **v1.1** [ 07/24/24 ]
+   - Switched hot key from `<Shift><F2>` to `<F3>`.  Original hot-key combination conflicted with hot key used by Citrix when running Mathcad Prime in a Citrix virtual environment.  `<F3>` is not used by Mathcad Prime and is right next to the hot key for Mathcad's built-in functions (`<F2>`).
