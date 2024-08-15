@@ -26,7 +26,7 @@ enum { MC_STRING = STRING };  // substitute enumeration variable MC_STRING for S
 
 
 // RefProp Mathcad Add-in Version
-std::wstring CFVersion = L"1.1";       // Mathcad Add-in version number
+std::wstring CFVersion = L"1.2";       // Mathcad Add-in version number
 
 // Setup Dialog Window for debugging
 HWND hwndDlg;  // Generic Dialog handle for pop-up message boxes (MessageBox) when needed
@@ -54,7 +54,6 @@ bool shiftDown = false;
 bool bhooked = false;
 bool cfDebug = false;
 bool fileDebug = true;
-//static BOOL MC_Active = FALSE;    // TODO: Start off as TRUE since Mathcad is active when DLL Loads?
 
 // Global Category and Function indices;
 int iCategory;
@@ -85,11 +84,11 @@ typedef struct
 std::vector<Category> CatVec;
 
 
-
+//Global Vars
 HHOOK hhk;
 // HHOOK hhookMsg;
 HINSTANCE hDLLglobal = 0;
-
+fs::path docsPath = "";           // making this global because we need it in multiple places.
 
 
 //Function Templates
@@ -173,7 +172,7 @@ void SendAffine(wchar_t chFC)
     keys[13] = keys[12];                               // Left <Shift>
     keys[13].ki.dwFlags = KEYEVENTF_KEYUP;             // (UP)   set the KEYUP flag
 
-    // Now send <DEL> key todelete the double quotes around the °X symbol **************************
+    // Now send <DEL> key to delete the double quotes around the °X symbol **************************
     // Since the <Ctrl> and <Shift> keys are released above, this will actually work
     keys[14].type = INPUT_KEYBOARD;
     keys[14].ki.wVk = VK_DELETE;                       // <DEL>
@@ -217,9 +216,25 @@ int SendFunction2Mathcad(HWND mcad, int iC, int iF)
 {
     std::wstring FuncString = CatVec[iC].Functions[iF].LocalName;     // Get Function string
     std::wstring strp = CatVec[iC].Functions[iF].Params;
-    for (auto& c : strp) c = toupper(c);                              // make temp UCase version of Params
-    if (strp != L"CONST")                                             // if Params <> const
-        FuncString.append(L"(").append(CatVec[iC].Functions[iF].Params);  // append parameters, no closing paren
+    if (FuncString == L"INCLUDE")   // This is an include statement, not a normal funciton.
+    {
+        FuncString = strp;                // Get Path to include file
+        if (FuncString.find(L"\\") == std::wstring::npos)  // If Path is not fully qualified (i.e. X:\path\filename.ext)
+        {
+            if (!docsPath.empty())        // Look for the file in docsPath if it is not empty (filled by laoddocs()
+            {
+                FuncString.insert(0, L"\\");             // Prepend a backspace
+                FuncString.insert(0, docsPath.c_str());  // Prepend the full Custom Functions\docs path
+            }
+        }                                 // Otherwise, assume fully qualified and valid path to INCLUDE file
+        FuncString.insert(0, L"^"); //     prefix path with a carat "^" symbol
+    }
+    else                            // normal funciton
+    {
+        for (auto& c : strp) c = toupper(c);                              // make temp UCase version of Params
+        if (strp != L"CONST")                                             // if Params <> const
+            FuncString.append(L"(").append(CatVec[iC].Functions[iF].Params);  // append parameters, no closing paren
+    }
 
     std::vector<INPUT> keys;         // Initialize Vector of INPUT keystrokes
     static bool quoteSet = false;    // Initialize quote pair tracking to false
@@ -228,25 +243,72 @@ int SendFunction2Mathcad(HWND mcad, int iC, int iF)
         switch (ch)
         {
             case L' ':               // Skip spaces.  Mathcad won't like them in a Math region.
+                if (FuncString.find(L"^") == 0)  // If this is an INCLUDE worksheet statement...
+                {
+                    INPUT input = { 0 };                    // Initialize temp input stroke
+                    input.type = INPUT_KEYBOARD;
+                    input.ki.dwFlags = KEYEVENTF_UNICODE;   // Send UNICODE Event (KEYDOWN)
+                    input.ki.wScan = ch;                    //    w/ current character, ch
+                    keys.push_back(input);
+                    input.ki.dwFlags |= KEYEVENTF_KEYUP;    // Send UNICODE Event (KEYUP)
+                    keys.push_back(input);
+                };
                 break;
+
+            case '^':                // Special code to send <Ctrl><Shift>W to include Worksheet
+            {
+                INPUT input = { 0 };                        // Initialize temp input stroke
+                input.type = INPUT_KEYBOARD;
+                input.ki.wVk = VK_LCONTROL;                 // Left <Ctrl> (KEYDOWN)
+                keys.push_back(input);
+
+                input.ki.wVk = VK_LSHIFT;                   // Left <Shift> (KEYDOWN)
+                keys.push_back(input);
+
+                input.ki.wVk = L'W';                        // 'W' Key (KEYDOWN)
+                keys.push_back(input);
+
+                input.ki.dwFlags = KEYEVENTF_KEYUP;         // 'W' Key (KEYUP)
+                keys.push_back(input);
+
+                input.ki.wVk = VK_LSHIFT;                   // Left <Shift> (KEYUP)
+                keys.push_back(input);
+
+                input.ki.wVk = VK_LCONTROL;                 // Left <Ctrl> (KEYUP)
+                keys.push_back(input);
+            }
+            break;
 
             case L'.':               // Handle subscripts with a dot.  Send <Ctrl>- toggle
             {
                 INPUT input = { 0 };                               // Initialize temp input stroke
 
-                input.type = INPUT_KEYBOARD;
-                input.ki.wVk = VK_LCONTROL;                        // Left <Ctrl>
-                keys.push_back(input);
+                if (FuncString[0] == L'^')                         // If Special codes
+                {
+                    input.type = INPUT_KEYBOARD;
+                    input.ki.dwFlags = KEYEVENTF_UNICODE;              // Send UNICODE Event (KEYDOWN)
+                    input.ki.wScan = ch;                               //   with current character, ch
+                    keys.push_back(input);
 
-                input.ki.wVk = VK_SUBTRACT;                        // '-' key
-                keys.push_back(input);
+                    input.ki.dwFlags |= KEYEVENTF_KEYUP;               // Send UNICODE Event (KEYUP)
+                    keys.push_back(input);
+                }
+                else                                               // Otherwise, interpret as subscript
+                {
+                    input.type = INPUT_KEYBOARD;
+                    input.ki.wVk = VK_LCONTROL;                        // Left <Ctrl>
+                    keys.push_back(input);
 
-                input.ki.dwFlags = KEYEVENTF_KEYUP;                // '-' key (KEYUP)
-                keys.push_back(input);
+                    input.ki.wVk = VK_SUBTRACT;                        // '-' key
+                    keys.push_back(input);
 
-                input.ki.wVk = VK_LCONTROL;                        // Left <Ctrl>
-                input.ki.dwFlags = KEYEVENTF_KEYUP;                // (UP)   set the KEYUP flag
-                keys.push_back(input);
+                    input.ki.dwFlags = KEYEVENTF_KEYUP;                // '-' key (KEYUP)
+                    keys.push_back(input);
+
+                    input.ki.wVk = VK_LCONTROL;                        // Left <Ctrl>
+                    input.ki.dwFlags = KEYEVENTF_KEYUP;                // (UP)   set the KEYUP flag
+                    keys.push_back(input);
+                }
             }
             break;
 
@@ -291,9 +353,19 @@ int SendFunction2Mathcad(HWND mcad, int iC, int iF)
 
     if ((int)keys.size() > 0)
     {
-        // Add two more right arror to keystrokes list to get to the end of the function string.
+        // Add an Enter/Return key if we just put in an Include Worksheet object.
+        if (FuncString[0] == L'^')
+        {
+            INPUT input = { 0 };
+            input.type = INPUT_KEYBOARD;
+            input.ki.wVk = VK_RETURN;                      // Enter/Return key (KEYDOWN)
+            keys.push_back(input);
+            input.ki.dwFlags = KEYEVENTF_KEYUP;            // Enter/Return key (KEYUP)
+            keys.push_back(input);
+        }
+        // Otherwise, Add two more right arror to keystrokes list to get to the end of the function string.
         // skip if entering a constant
-        if (strp != L"CONST")
+        else if (strp != L"CONST")
         {
             INPUT input = { 0 };
             input.type = INPUT_KEYBOARD;
@@ -720,7 +792,7 @@ BOOL LoadDocs()    // Get DLL directory and the \docs directory underneath it
     {
 
         fs::path fsName = DllPath;   // Assign DllPath string to an fs::path variable
-        fs::path docsPath = fsName.parent_path().append("docs");  // This is the path we are looking for
+        docsPath = fsName.parent_path().append("docs");  // This is the path we are looking for
 
         std::wstring CatNew = L"";
         int iCat = -1;
@@ -926,7 +998,3 @@ extern "C" BOOL WINAPI  DllEntryPoint (HINSTANCE hDLL, DWORD dwReason, LPVOID lp
     }
     return TRUE;
 }
-
-
-    
-

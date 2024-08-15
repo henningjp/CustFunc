@@ -547,6 +547,25 @@
 	<!-- These High Level API calls are preferred over the Legacy functions, -->
 	<!-- but require REFPROP 10 or higher.  Errors will be thrown if a       -->
 	<!-- suitable REFPROP version is not loaded.                             -->
+	<!-- ******************************************************************* -->
+	<!-- The first entry will include the units handling worksheet           -->
+	<!-- at the current cursor location.                                     -->
+	<!-- ******************************************************************* -->
+	<function>
+    <name>Add Refprop_units.mcdx Include File</name>
+		<local_name>INCLUDE</local_name>
+		<!-- If no path is provided in the filename below, CustFunc will look for it in <Mathcad Prime>"/Custom Functions/docs" -->
+		<params>Refprop_units.mcdx</params>
+		<category>NIST Refprop (High-Level API)</category>
+		<description>Include worksheet Refprop_units.mcdx from docs directory or shared area if full path is provided in XML.\nThe worksheet MUST be included in order to use High-Level Universal REFPROP function in this category.</description>
+	</function>
+	<!-- ******************************************************************** -->
+	<function>
+		<name>REFPROP</name>
+		<params>"hFld","hIn","hOut",a,b</params>
+		<category>NIST Refprop (High-Level API)</category>
+		<description>*** ONLY AVAILABLE WITH REFPROP 10+ ***\nNOTE: WORKSHEET MUST INCLUDE Refprop_units.mcdx BEFORE THIS CALL. \nUniversal REFPROP call that handles units in inputs, returns array/scalar/character results, and applies units to numeric output values. \nThe parameter, "hFld", is a quoted string containing the Refprop fluid/mixture name; may be a blank or empty string if the previously loaded fluid/mixture is to be used.  \n"hIn" is the input state point specification.  Valid codes are T, P, D, E, H, S, and Q, specified in pairs to identify the values sent in numeric parameters a and b.  \n"hOut" is the output code string for requested values to be returned.  Multiple numeric outputs can be requested and must be separated by spaces, commas, semicolons, or bars (pipe characters), but not mixed.  See ALLPROPS documentation for valid output codes and REFPROP documentation for other special output codes.  \nParameters a and b are the first and second numeric inputs specified in "hIn" and in the stated order.  May be zero or arbitrary when retrieving non-state-dependent values.\nNOTE: This routine may be slower than calling the specialized functions, rp_REFPROP, rp_REFPROP1, and rp_REFPROPc or the Legacy API functions.</description>
+	</function>
 	<function>
 		<name>rp_REFPROP</name>
 		<params>"hFld","hIn","hOut",a,b</params>
@@ -564,12 +583,6 @@
 		<params>"hFld","hIn","hOut",a,b</params>
 		<category>NIST Refprop (High-Level API)</category>
 		<description>*** ONLY AVAILABLE WITH REFPROP 10+ ***\nSpecialized REFPROP call that returns a STRING results based on the input parameters.  This version of REFPROP cannot return numeric values. \nThe parameter, "hFld", is a quoted string containing the Refprop fluid/mixture name; may be a blank or empty string if the previously loaded fluid/mixture is to be used.  \n"hIn" is the input state point specification.  Valid codes are T, P, D, E, H, S, and Q, specified in pairs to identify the values sent in numeric parameters a and b.  \n"hOut" is the output code string for requested STRING to be returned.  Multiple outputs can be requested and must be separated by spaces, commas, semicolons, or bars (pipe characters), but not mixed.  See REFPROP documentation for all character based output codes.  \nParameters a and b are the first and second numeric inputs specified in "hIn" and in the stated order.  May be zero or arbitrary when retrieving non-state-dependent values.  No Mathcad units applied, but values must be scaled to modified MASS SI Units (with thermal conductivity in [W/m-K] and surface tension in [N/m]).</description>
-	</function>
-	<function>
-		<name>REFPROP</name>
-		<params>"hFld","hIn","hOut",a,b</params>
-		<category>NIST Refprop (High-Level API)</category>
-		<description>*** ONLY AVAILABLE WITH REFPROP 10+ ***\nNOTE: WORKSHEET MUST INCLUDE Refprop_units.mcdx BEFORE THIS CALL. \nUniversal REFPROP call that handles units in inputs, returns array/scalar/character results, and applies units to numeric output values. \nThe parameter, "hFld", is a quoted string containing the Refprop fluid/mixture name; may be a blank or empty string if the previously loaded fluid/mixture is to be used.  \n"hIn" is the input state point specification.  Valid codes are T, P, D, E, H, S, and Q, specified in pairs to identify the values sent in numeric parameters a and b.  \n"hOut" is the output code string for requested values to be returned.  Multiple numeric outputs can be requested and must be separated by spaces, commas, semicolons, or bars (pipe characters), but not mixed.  See ALLPROPS documentation for valid output codes and REFPROP documentation for other special output codes.  \nParameters a and b are the first and second numeric inputs specified in "hIn" and in the stated order.  May be zero or arbitrary when retrieving non-state-dependent values.\nNOTE: This routine may be slower than calling the specialized functions, rp_REFPROP, rp_REFPROP1, and rp_REFPROPc or the Legacy API functions.</description>
 	</function>
 	<function>
 		<name>rp_SETFLUIDS</name>
