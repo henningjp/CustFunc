@@ -24,7 +24,7 @@ For DLLs containing a large number of Custom Functions, this means that the user
 This information has to be memorized or looked up in a reference document outside of Mathcad Prime for every additional function and seriously degrades the usefulness of the Custom Functions capability.  
 </details>
 
-# The CustFunc Add-in v1.1
+# The CustFunc Add-in v1.2
 
 The **CustFunc** add-in DLL does not actually register any new functions, but provides interface integration functionality for any other Custom Function DLLs that are loaded.  Mathcad Prime's built-in functions, as mentioned above, can be typed into a math region or inserted from the **_Functions_** panel.  The **_Functions_** panel is opened from Functions ribbon (the All Functions button) or by pressing the hot-key, `<F2>`.  **CustFunc** uses the hot-key `<F3>` to launch an **_Insert Custom Function_** dialog box, providing the user with a list of categorized Custom Functions for insertion onto the active worksheet at the current cursor location.  The **_Insert Custom Function_** dialog box will be populated with any XML function files found in Mathcad Prime's installation directory under `"Custom Functions\docs"`.
 
@@ -86,15 +86,49 @@ A number of sample XML files are provided for a few Mathcad Prime add-in custom 
 
 XML files for other add-ins can be added to this sample set.
 
+# Sample XML Files
+
+Sample XML files are located in the `\sampleXML` folder of this repository.  They include:  
+
+   |     **File**          | Units | Description                                         |
+   |-----------------------|:-----:|-----------------------------------------------------|
+   | **CoolProp_EN.xml**   | SI    | _For use with /CoolProp add-in_                     |
+   | **if97_SI_EN.xml**    | SI    | _Use for if97 with default SI units per /CoolProp/IF97_<br>_Accesses `if97_Units_SI.mcdx` include file_ |
+   | **if97_IAPWS_EN.xml** | IAPWS | _use for IF97 compiled with `IAPWS\_UNITS` defined_<br>_Accesses `if97_Units_IAPWS.mcdx` include file_<br>_(IAPWS units are modified SI with MPa and kJ.)_ |
+   | **Refprop_EN.xml**    | modSI | _for use with /Refprop add-in_<br>_(modSI units are modified SI with MPa and kJ.)_ |
+   | **UserPack.xml**      | -     | _Trivial example for accessing Mathcad's UserPack example_ |
+
+
 # CustFunc Enhancements
 
-There are a few enhancements that CustFunc offers over legacy behavior.  These include:
+There are a few enhancements that CustFunc offers over legacy Insert Function behavior.  These include:
 
 - The extended character set, including greek symbols (e.g. α, ε, Δ, etc.) and other technical symbols, operators, and diacritical marks, can be entered into the function name, local_name, and/or description.  The easiest way to enter these symbols is by copying them from the Microsoft Character Map application and pasting into the XML sub-elements. 
 - Textual subscripts can be entered by embedding a period in the function's <local_name> element. 
-- Constant values can be input with no parameters by omitting the `<parameters>` element or using a `<parameter>` value of "const". 
+- Constant values can be input with no parameters by omitting the `<parameters>` element or using a `<parameter>` value of "const". For example:
+   ```XML
+  <function>
+    <name>Constants: Critical Temperature</name>
+    <local_name>T.c</local_name>
+    <params>const</params>
+    <category>IF97 (Water Properties) w/ Units</category>
+    <description>Returns the Temperature [K] at the critical point for water as defined in "IAPWS-IF97".\nNOTE: Mathcad units handling on inputs and return value - included in "if97_Units.mcdx".</description>
+  </function>
+   ```
+- Include (Reference) Worksheets can be inserted by providing the `<local_name>` element as `INCLUDE` and providing the worksheet name to be included in the `<params>` element.  If only a file name is given, *_CustFunc_* looks for the file in the \docs directory with the rest of the XML files.  Alternatively, a fully qualified path can be provided to another local or shared filesystem location.  For example:
+   ```XML
+  <function>
+    <name>Add if97_Units_SI.mcdx Include File</name>
+    <local_name>INCLUDE</local_name>
+    <!-- If no path is provided in the filename below, CustFunc will look for it in -->
+    <!-- <Mathcad Prime>"/Custom Functions/docs"                                    -->
+    <params>if97_Units_SI.mcdx</params>
+    <category>IF97 (Water Properties) w/ Units</category>
+    <description>Include worksheet if97_Units.mcdx from docs directory or shared area if path is provided in XML.\nThe worksheet MUST be included in order to use the remaining functions in this category.</description>
+  </function>
+   ```
 
-These allow XML files to be provided not only for companion DLLs, but also for included worksheets that contain user functions and constants (entered with a `<parameter>` element of "const").
+These enhancements allow XML files to be provided not only for companion DLLs, but also for included worksheets that contain user functions and constants (entered with a `<parameter>` element of "const").
 
 # Installing CustFunc
 
@@ -104,19 +138,46 @@ To install CustFunc in your local Mathcad Prime installation:
 2. Download the `CustFunc.dll` to your local machine (typically in Downloads directory)
 3. Copy the `CustFunc.dll` file to Mathcad Prime's `Custom Functions` directory.
 4. Downlaod any of the sample XML files from the repository or extract them from the SourceCode.zip file for this release.
-5. Copy sample XML files (or custom XML files) into a `Custom Functions\docs` directory.
-6. Restart Mathcad Prime.
-7. On any worksheet, press `<F3>` to pop up the **Insert Custom Functions** panel.  At least one XML file must exist in the `docs` directory or an error message will pop up indicating that no XML files were found.
+5. Copy sample XML files (or create your own custom XML files) into the `Custom Functions\docs` directory (create this `\docs` directory if it doesn't already exist).
+6. Copy frequently used XMCD include files into the `Custom Functions\docs` directory or edit the XML files to insert them using full path to another local or shared location.
+7. Restart Mathcad Prime.
+8. On any worksheet, press `<F3>` to pop up the **Insert Custom Functions** panel.  At least one XML file must exist in the `docs` directory or an error message will pop up indicating that no XML files were found.
 
-# Code Enhancements
+# Use of XMCD Include Files
+
+CustFunc works with **Include Worksheet** functions in addition to Custom Function DLL's and can now use XML entries that automatically insert the include statement directly into a worksheet with the path to the desired include file (without having to remember and/or browse to its stored location every time).  The example IF97 and REFPROP XML files above will work with the .xmcd include files found in their respective repositories to provide Mathcad wrapper functions that:
+1. Call their respective add-in DLL Custom Functions
+2. Provide more standard math notation for the function names
+3. Handle input values with units and convert them to the units requried by the Custom Functions in the add-in DLL
+4. Apply Mathcad units to the return values from the Custom Functions in the add-in DLL  
+
+Accessed Include Worksheets to date are listed here:  
+
+   |     **File**              | Units | Description                                         |
+   |---------------------------|:-----:|-----------------------------------------------------|
+   | **if97_Units_SI.mcdx**    | SI    | _Use for if97 with default SI units per /CoolProp/IF97_<br>_Accesses `if97_Units_SI.mcdx` include file_ |
+   | **if97_Units_IAPWS.mcdx** | IAPWS | _use for IF97 compiled with `IAPWS\_UNITS` defined_<br>_Accesses `if97_Units_IAPWS.mcdx` include file_<br>_(IAPWS units are modified SI with MPa and kJ.)_ |
+   | **RefProp_units.mcdx**    | modSI | _for use with the Mathcad /Refprop add-in_                      |
+
+These include files are available in their respective add-in repositories on GitHub; [CoolProp/IF97](https://github.com/CoolProp/IF97) and [usnistgov/REFPROP-wrappers](https://github.com/usnistgov/REFPROP-wrappers).
+
+
+# Participating
 
 Contributions to this code repository are welcome and encouraged through:  
 
 * Issue reporting under Issues
-* Code enhancement suggestions and/or pull requests
-* Addition of sample XML file for any other public add-in DLLs
+* Discussions about usage and Code improvement suggestions
+* Collaboration through Pull Requests (PRs) with new features/enhancements/fixes
+* Addition of sample XML files for any other public add-in DLLs
 
 # Change Log
 
 - **v1.1** [ 07/24/24 ]
    - Switched hot key from `<Shift><F2>` to `<F3>`.  Original hot-key combination conflicted with hot key used by Citrix when running Mathcad Prime in a Citrix virtual environment.  `<F3>` is not used by Mathcad Prime and is right next to the hot key for Mathcad's built-in functions (`<F2>`).
+
+- **v1.2** [ 08/15/24 ]
+  - Added ability to insert Include Worksheets through the **CustFunc** interface, allowing reference worksheets to be included from a specified local or shared filesystem location.
+  - Updated the example if97_EN.XML file and split into two files:  
+    **if97_SI_EN.XML** &emsp;&emsp;&emsp;&emsp; _(use for default SI units per /CoolProp/IF97)_  
+    **if97_IAPWS_EN.XML** &emsp;&emsp; _(use if IF97 is compiled with IAPWS\_UNITS defined)_  
