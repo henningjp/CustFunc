@@ -1,3 +1,5 @@
+<img width="703" height="185" alt="CustFunc" src="https://github.com/user-attachments/assets/45e8d907-750b-407e-9b2f-ae63999b9382" />
+
 # CustFunc add-in DLL for PTC Mathcad Prime
 
 While Mathcad Prime does contain a Functions panel for inserting built-in functions, it does not allow for incorporation of categorized Custom Functions into that interface.
