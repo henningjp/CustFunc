@@ -531,14 +531,14 @@
   <!-- ************************************************************************************************************ -->
   <function>
     <name>Saturation Curve: Saturation Temperature</name>
-    <local_name>Tsat</local_name>
+    <local_name>T.sat</local_name>
     <params>p</params>
     <category>IF97 (Water Properties) w/ Units</category>
     <description>Calculates saturated temperature [K] as a function of pressure, p [MPa] along the saturation curve between the triple and critical points.\nNOTE: Mathcad units handling on inputs and return value - included in "if97_Units.mcdx".</description>
   </function>
   <function>
     <name>Saturation Curve: Saturation Pressure</name>
-    <local_name>Psat</local_name>
+    <local_name>P.sat</local_name>
     <params>T</params>
     <category>IF97 (Water Properties) w/ Units</category>
     <description>Calculates saturated pressure [MPa] as a function of temperature, T [K] along the saturation curve between the triple and critical points.\nNOTE: Mathcad units handling on inputs and return value - included in "if97_Units.mcdx".</description>
