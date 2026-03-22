@@ -6,76 +6,90 @@
     <function>
         <name>High-Level: PropsSI</name>
         <local_name>PropsSI</local_name>
-        <params>"Output Name", "Input Name 1", Value 1, "Input Name 2", Value 2, "Fluid Name"</params>
+        <params>"Output", "Input1", Value1, "Input2", Value2, "Fluid"</params>
         <category>CoolProp</category>
-        <description>Calculates the state dependent property specified by "Output Name" given the input property pair, Value 1 and Value 2, for the specified "Fluid".  Output and Input Names are strings representing a thermodynamic property, i.e. "T", "P", "D", "H", "C", "V", "L", "Q", etc.  For a complete list of valid property names, see the CoolProp documentation at http:\\www.coolprop.org.</description>
+        <description>Calculates the state dependent property specified by "Output" given the input property pair "Input1" and "Input2", with their respective values passed in Value1 and Value2, for the specified "Fluid".  Output and Input name strings represent a thermodynamic property (i.e., "T", "P", "D", "H", "C", "V", "L", "Q", etc.).  Only one property can be specified for the Output string and each of the Input strings.  For a complete list of valid property names, see the CoolProp documentation at https:\\coolprop.org.</description>
+    </function>
+    <function>
+        <name>High-Level: PropsSImulti</name>
+        <local_name>PropsSImulti</local_name>
+        <params>"Outputs", "Input1", Vec1, "Input2", Vec2, "Fluid"</params>
+        <category>CoolProp</category>
+        <description>Calculates the state dependent properties specified by "Outputs" given the input property pair "Input1" and "Input2", with their respective values passed in arrays Vec1 and Vec2, for the specified "Fluid".  The the two numerical inputs, Vec1 and Vec2, MUST be column (vertical) vectors of the same length.  "Outputs" and "Input Name" contain strings representing a thermodynamic property (i.e., "T", "P", "D", "H", "C", "V", "L", "Q", etc.)  Multiple "Outputs" can be returned by specifying the requested properties in a space, comma, or semicolon delimited string (e.g. "D Hmass Smass").  Results are returned in a vector/matrix with state point pairs on each row and specified output values across each column.  The return matrix should be checked and or filtered for NaN values, indicating an error in calculating that particular state point value.  For a complete list of valid property names for Inputs and Outputs, see the CoolProp documentation at https:\\coolprop.org.</description>
+    </function>
+    <function>
+        <name>High-Level: PhaseSI</name>
+        <local_name>PhaseSI</local_name>
+        <params>"Input1", Value 1, "Input2", Value2, "Fluid"</params>
+        <category>CoolProp</category>
+        <description>Determines the state dependent phase (returned as a "string") given the input property pair "Input1" and "Input2", with their respective values passed in Value1 and Value2, for the specified "Fluid".  Input names are strings representing a thermodynamic property (i.e., "T", "P", "D", "H", "C", "V", "L", "Q", etc.)  For a complete list of valid property names, see the CoolProp documentation at https:\\coolprop.org.</description>
     </function>
     <function>
         <name>High-Level: Props1SI</name>
         <local_name>Props1SI</local_name>
-        <params>"Fluid Name", "Property Name"</params>
+        <params>"Fluid", "Property"</params>
         <category>CoolProp</category>
-        <description>Returns the non-state dependent fluid property specified by "Property Name" for the specified "Fluid Name".  Property Names are strings representing a trivial fluid property, i.e. "Tcrit", "Ptriple", "GAS_CONSTANT", etc.  For a complete list of valid property names, see the CoolProp documentation at http:\\www.coolprop.org.</description>
+        <description>Returns the non-state dependent fluid property specified by "Property" for the specified "Fluid".  Property names are strings representing a trivial fluid property (i.e., "Tcrit", "Ptriple", "GAS_CONSTANT", etc.).  For a complete list of valid property names, see the CoolProp documentation at https:\\coolprop.org.</description>
     </function>
     <function>
         <name>Humid Air: HAPropsSI</name>
         <local_name>HAPropsSI</local_name>
-        <params>"Output Name", "Input Name 1", Value 1, "Input Name 2", Value 2, "Input Name 3", Value 3</params>
+        <params>"Output", "Input1", Value1, "Input2", Value2, "Input3", Value3</params>
         <category>CoolProp</category>
-        <description>Calculates the state dependent property specified by "Output Name" for Humid Air given the input properties, Value 1, Value 2, and Value 3.  Output and Input Names are strings representing a thermodynamic property, i.e. "T", "P", "D", "H", "C", "V", "L", "Q", etc.  One of these Input Names and values is typically "R" specifying a relative humidity.  For a complete list of valid property names, see the CoolProp documentation at http:\\www.coolprop.org.</description>
+        <description>Calculates the state dependent property specified by "Output" for Humid Air given the input properties "Input1", "Input2", and "Input3", with their respective scalar values passed in Value1, Value2, and Value3.  Output and Input names are strings representing a thermodynamic property (i.e., "T", "P", "D", "H", "C", "V", "L", "Q", "R", etc.).  One of these Input names and values is typically "R" specifying a relative humidity.  For a complete list of valid property names, see the CoolProp documentation at https:\\coolprop.org.</description>
     </function>
     <!-- Below are the entries for the CoolProp Low-Level functions -->
     <function>
-        <name>Low-Level: get_global_param_string</name>
+        <name>Low-Level: Get Global Parameter</name>
         <local_name>get_global_param_string</local_name>
         <params>"Parameter String"</params>
         <category>CoolProp</category>
         <description>Returns the value of the requested CoolProps parameter.  Useful parameter strings are "FluidList", to return a comma separated list of all valid fluid name strings, and "version", which returns the installed version of CoolProp.</description>
     </function>
     <function>
-        <name>Low-Level: get_fluid_param_string</name>
+        <name>Low-Level: Get Fluid Parameter</name>
         <local_name>get_fluid_param_string</local_name>
         <params>"Fluid Name", "Parameter String"</params>
         <category>CoolProp</category>
         <description>Returns the value of the requested fluid parameter.  Useful parameter strings are "aliases", to return a comma separated list of valid fluid name strings, and "CAS", which returns the fluids Chemical Abstract Service registration number.</description>
     </function>
     <function>
-        <name>Low-Level: set_reference_state</name>
+        <name>Low-Level: Set Reference State</name>
         <local_name>set_reference_state</local_name>
         <params>"Fluid Name", "Reference State String"</params>
         <category>CoolProp</category>
         <description>Sets the reference state for a specific fluid one of the standard reference states: "IIR", "ASHRAE", "NBP", or "DEF" (CoolProp default).</description>
     </function>
     <function>
-        <name>Low-Level: get_mixture_binary_pair_data</name>
+        <name>Low-Level: Get Mixture Binary Pair</name>
         <local_name>get_mixture_binary_pair_data</local_name>
         <params>"CAS1", "CAS2", "Parameter"</params>
         <category>CoolProp</category>
         <description>Gets the binary mixing parameter for a specified binary pair.  Fluid names MUST be the "CAS" string for each of the components.  Parameter must be one of ["name1", "name2", "function", "type", "F", "xi", "zeta", "gammaT", "gammaV", "betaT", "betaV"].</description>
     </function>
     <function>
-        <name>Low-Level: set_mixture_binary_pair_data</name>
+        <name>Low-Level: Set Mixture Binary Pair</name>
         <local_name>set_mixture_binary_pair_data</local_name>
         <params>"CAS1", "CAS2", "Parameter", Value</params>
         <category>CoolProp</category>
         <description>Sets the binary mixing parameter for a specified binary pair.  Fluid names MUST be the "CAS" string for each of the components.  "Parameter" must be one of ["F", "xi", "zeta", "gammaT", "gammaV", "betaT", "betaV"].  Value, is the numeric value of the parameter being set.</description>
     </function>
     <function>
-        <name>Low-Level: get_mixture_binary_pair_pcsaft</name>
+        <name>Low-Level: Get PCSAFT Mixture Binary Pair</name>
         <local_name>get_mixture_binary_pair_pcsaft</local_name>
         <params>"CAS1", "CAS2", "Parameter"</params>
         <category>CoolProp</category>
-        <description>Gets the PCSAFT binary mixing parameter for a specified binary pair.  Fluid names MUST be the "CAS" string for each of the components.</description>
+        <description>Gets the PCSAFT binary mixing parameter for a specified binary pair.  Fluid names MUST be the "CAS" string for each of the components.  The parameter being retrieved can be either the constant parameter "kij" or the temperature coefficient "kijT".</description>
     </function>
     <function>
-        <name>Low-Level: set_mixture_binary_pair_pcsaft</name>
+        <name>Low-Level: Set PCSAFT Mixture Binary Pair</name>
         <local_name>set_mixture_binary_pair_pcsaft</local_name>
         <params>"CAS1", "CAS2", "Parameter", Value</params>
         <category>CoolProp</category>
-        <description>Sets the PCSAFT binary mixing parameter for a specified binary pair.  Fluid names MUST be the "CAS" string for each of the components. Value, is the numeric value of the parameter being set.</description>
+        <description>Sets the PCSAFT binary mixing parameter for a specified binary pair.  Fluid names are identified by the "CAS" string for each of the components. The parameter being set can be either the constant parameter "kij" or the temperature coefficient "kijT".  Value, is the numeric value of the parameter being set.</description>
     </function>
     <function>
-        <name>Low-Level: apply_simple_mixing_rule</name>
+        <name>Low-Level: Apply Simple Mixing Rule</name>
         <local_name>apply_simple_mixing_rule</local_name>
         <params>"CAS1", "CAS2", "Parameter", Value</params>
         <category>CoolProp</category>
