@@ -77,6 +77,7 @@ As many functions as needed for a specific DLL can be loaded in this XML file, t
 
 > **_NOTE:_** The `<name>` tag can contain a "user friendly" name and will be inserted into the **CustFunc** dialog box in the Function Name ListBox.  The `<local_name>` is the actual function syntax that will be inserted on the Mathcad Prime worksheet.  These names can be the same.  If `<local_name>` is omitted, the `<name>` tag will be used as the actual function syntax. 
 
+> **_NOTE:_** The `<params>` tag can contain descriptive comma-separated variable names and will be inserted into the function in the Mathcad worksheet surrounded by parentheses.  All spaces will be removed.  Parameters can be simple variable names, quoted "strings", or bracketed \[vector\] names to help the user understand what should be entered.
 ---
 
 </details>
@@ -183,3 +184,6 @@ Contributions to this code repository are welcome and encouraged through:
   - Updated the example if97_EN.XML file and split into two files:  
     **if97_SI_EN.XML** &emsp;&emsp;&emsp;&emsp; _(use for default SI units per /CoolProp/IF97)_  
     **if97_IAPWS_EN.XML** &emsp;&emsp; _(use if IF97 is compiled with IAPWS\_UNITS defined)_  
+
+- **v1.3** [ 03/23/26 ]
+  - Allow parameters to be inserted as a single element \[vector\] using square brackets to indicate to the user that a vector value (typically a vertical one column vector) should be entered as the parameter.
