@@ -26,7 +26,7 @@ enum { MC_STRING = STRING };  // substitute enumeration variable MC_STRING for S
 
 
 // RefProp Mathcad Add-in Version
-std::wstring CFVersion = L"1.2";       // Mathcad Add-in version number
+std::wstring CFVersion = L"1.3";       // Mathcad Add-in version number
 
 // Setup Dialog Window for debugging
 HWND hwndDlg;  // Generic Dialog handle for pop-up message boxes (MessageBox) when needed
@@ -131,7 +131,7 @@ void SendAffine(wchar_t chFC)
     keys[3].ki.wScan = 0x00B0;                        // Degree Sym (UP)
     keys[3].ki.dwFlags = KEYEVENTF_UNICODE | KEYEVENTF_KEYUP;
 
-     // Now send the 'C' or 'F' character from the parameter ***************************************
+    // Now send the 'C' or 'F' character from the parameter ***************************************
     keys[4].type = INPUT_KEYBOARD;
     //keys[8].ki.wVk = (isC) ? 'C' : 'F';             // (Not using vKey)
     keys[4].ki.wVk = 0;                               // Send UNICODE Instead (no Shift req'd)
@@ -179,7 +179,6 @@ void SendAffine(wchar_t chFC)
 
     keys[15] = keys[14];                               // <DEL>
     keys[15].ki.dwFlags = KEYEVENTF_KEYUP;             // (UP)
-
 
     // Now Set Label to Unit with <Ctrl>U  *********************************************************
     keys[16].type = INPUT_KEYBOARD;
@@ -237,7 +236,7 @@ int SendFunction2Mathcad(HWND mcad, int iC, int iF)
     }
 
     std::vector<INPUT> keys;         // Initialize Vector of INPUT keystrokes
-    static bool quoteSet = false;    // Initialize quote pair tracking to false
+    static bool quoteSet = false;    // Initialize "quote" pair tracking to false (used to clear quote pair on 2nd pass through)
     for (auto ch : FuncString)      // for each character in the Function String
     {
         switch (ch)
@@ -253,7 +252,7 @@ int SendFunction2Mathcad(HWND mcad, int iC, int iF)
                     input.ki.dwFlags |= KEYEVENTF_KEYUP;    // Send UNICODE Event (KEYUP)
                     keys.push_back(input);
                 };
-                break;
+                break;                           // Otherwise, skip spaces in normal function strings
 
             case '^':                // Special code to send <Ctrl><Shift>W to include Worksheet
             {
@@ -312,6 +311,21 @@ int SendFunction2Mathcad(HWND mcad, int iC, int iF)
             }
             break;
 
+            case L']':                                     // This is a matching bracket pair; Mathcad will have
+            {                                              //    already supplied it, just Right Arrow over it.
+                INPUT input = { 0 };                           // Initialize temp input stroke
+
+                input.type = INPUT_KEYBOARD;
+                input.ki.wVk = VK_RIGHT;                       // '->' key
+                input.ki.dwFlags = KEYEVENTF_EXTENDEDKEY;      // It's an extended key on 101-keyboards
+                keys.push_back(input);
+
+                input.ki.dwFlags |= KEYEVENTF_KEYUP;           // '->' key (KEYUP)
+                keys.push_back(input);
+
+                break;                                         // break out of switch
+            }
+
             case L'"':
             if (quoteSet)                                      // This is a matching quote pair; Mathcad will have
             {                                                  //    already supplied it, so Right Arrow over it.
@@ -334,7 +348,6 @@ int SendFunction2Mathcad(HWND mcad, int iC, int iF)
                 quoteSet = true;                               //     set flag and fall through
                 [[fallthrough]];
             }
-
 
             default:                 // Handle any other characters as a UNICODE wchar_t
             {
@@ -919,8 +932,16 @@ BOOL LoadDocs()    // Get DLL directory and the \docs directory underneath it
 }
 
 // ************************************************************************************
-// DLL entry point code.  
-// This code loads/removes the DLL and installed keyboard hooks  
+// DLL entry point code.
+// This code loads/removes the DLL and installed keyboard hooks
+// TODO: Skip if this DLL is already loaded, which can happen if the user opens multiple Mathcad Prime instances.
+//       We only want one instance of the DLL and Keyboard Hook running, so we should check if it's already loaded 
+//       before loading again and installing additional hooks.
+
+// Determine if CustFunc DLL is already loaded by checking for the presence of the Keyboard Hook.
+// If the hook is present, we know the DLL is already loaded and we can skip loading again and installing additional hooks.
+
+
 // ************************************************************************************
 // Since we have our own DLL Entry point (not DLLMain) we must call the _CRT_INIT function manually
 // to initialize the C Runtime library.  Ignore the IntelliSense warning on _CRT_INIT not found.
@@ -935,8 +956,8 @@ extern "C" BOOL WINAPI  DllEntryPoint (HINSTANCE hDLL, DWORD dwReason, LPVOID lp
         case DLL_PROCESS_ATTACH:
         {
             //
-             // DLL is attaching to the address space of the current process.
-             //
+            // DLL is attaching to the address space of the current process.
+            //
             hDLLglobal = hDLL;
 
             if (!_CRT_INIT(hDLL, dwReason, lpReserved))
