@@ -31,21 +31,6 @@ std::wstring CFVersion = L"1.3";       // Mathcad Add-in version number
 // Setup Dialog Window for debugging
 HWND hwndDlg;  // Generic Dialog handle for pop-up message boxes (MessageBox) when needed
 
-//enum EC { MUST_BE_REAL = 1, 
-//          UNKNOWN, 
-//          NUMBER_OF_ERRORS };                                       // Dummy Code for Error Count
-
-    // table of error messages
-    // if user function never returns an
-    // error -- you do not need to create this
-    // table
-//char * CFErrorMessageTable[NUMBER_OF_ERRORS] =
-//{
-//    (char *)("Argument must be real"),                      //  MUST_BE_REAL
-//    (char *)("Unknown Error"),                              //  UNKNOWN
-//    (char *)("Error Count - Not Used")                      //  NUMBER_OF_ERRORS
-//};
-
 #define SHIFTED 0x8000
 #define TEXTLENGTH 10
 
@@ -89,6 +74,9 @@ HHOOK hhk;
 // HHOOK hhookMsg;
 HINSTANCE hDLLglobal = 0;
 fs::path docsPath = "";           // making this global because we need it in multiple places.
+
+// Named mutex handle used to detect existing installed hook across processes
+HANDLE ghHookMutex = NULL;
 
 
 //Function Templates
@@ -934,10 +922,7 @@ BOOL LoadDocs()    // Get DLL directory and the \docs directory underneath it
 // ************************************************************************************
 // DLL entry point code.
 // This code loads/removes the DLL and installed keyboard hooks
-// TODO: Skip if this DLL is already loaded, which can happen if the user opens multiple Mathcad Prime instances.
-//       We only want one instance of the DLL and Keyboard Hook running, so we should check if it's already loaded 
-//       before loading again and installing additional hooks.
-
+//
 // Determine if CustFunc DLL is already loaded by checking for the presence of the Keyboard Hook.
 // If the hook is present, we know the DLL is already loaded and we can skip loading again and installing additional hooks.
 
@@ -966,29 +951,41 @@ extern "C" BOOL WINAPI  DllEntryPoint (HINSTANCE hDLL, DWORD dwReason, LPVOID lp
             }
 
             //
-            // Register the Error Message Table
-            // 
-            // **** Note: Normally we would register this table, but are not adding any Mathcad functions
-            // ****       here and will be throwing no errors to the user, so this step is skipped.
-            // if ( !CreateUserErrorMessageTable( hDLL, NUMBER_OF_ERRORS, CPErrorMessageTable ) )
-            //    break;
-
-            // Register User Function(s)
-            // ***  NOTE: Again, this DLL will probably not register any user functions,
-            // ***        but instead, will load any XML docs found under Custom Functions
-            // ***        and install the Keyboard hook here when the DLL Process is attached.
-
-            // Get DLL directory and the \docs directory underneath it
-            if (LoadDocs())    // If error, just break here and don't load the keyboard hooks.
-
+            // Prevent multiple instances from installing duplicate keyboard hooks.
+            // We use a named global mutex to detect if another instance already loaded and installed the hook.
+            // If the mutex already exists, we assume the hook (and functional DLL) is already present,
+            // so we abort loading by returning FALSE.
             //
-            // Attach the Keyboard Hook here and register the Keyboard Hook Callback Process
-            //
-            if (cfDebug) MessageBox(hwndDlg, L"Installing Hooks.", L"CustFunc Add-In", 0);
-            if (!bhooked) {
-                hhk = SetWindowsHookEx(WH_KEYBOARD_LL, (HOOKPROC)LowLevelKeyboardProc, hDLL, 0);
-                bhooked = true;
+            ghHookMutex = CreateMutexW(NULL, FALSE, L"Global\\CustFunc_Hook_v1");
+            if (ghHookMutex != NULL && GetLastError() == ERROR_ALREADY_EXISTS)
+            {
+                if (cfDebug) MessageBox(hwndDlg, L"CustFunc is already loaded (keyboard hook present). Aborting load.", L"CustFunc Add-In", 0);
+                CloseHandle(ghHookMutex);
+                ghHookMutex = NULL;
+                return FALSE; // Do not load this DLL instance because another is active.
             }
+
+            //
+            // NOTE:
+            // Normally in a Mathcad Custom Function we would register an error message table and
+            // User Function(s) here, but these are not needed. Instead, will load any XML docs
+            // found under Custom Functions\docs and install the Keyboard hook here when the DLL 
+            // Process is attached.
+
+            if (LoadDocs())  // If we successfully loaded the XML docs
+            {
+                // Attach the Keyboard Hook here and register the Keyboard Hook Callback Process
+                if (cfDebug) MessageBox(hwndDlg, L"Installing Hooks.", L"CustFunc Add-In", 0);
+                if (!bhooked) {
+                    hhk = SetWindowsHookEx(WH_KEYBOARD_LL, (HOOKPROC)LowLevelKeyboardProc, hDLL, 0);
+                    bhooked = true;
+                    if (hhk == NULL) {
+                        bhooked = false;
+                        MessageBox(hwndDlg, L"Failed to install keyboard hook!", L"CustFunc Add-In", MB_ICONERROR);
+                    }
+                }
+            }
+            // else error (no XML files), just break here and don't load the keyboard hooks.
             break;
         }
 
@@ -1015,7 +1012,22 @@ extern "C" BOOL WINAPI  DllEntryPoint (HINSTANCE hDLL, DWORD dwReason, LPVOID lp
                     if (cfDebug) MessageBox(hwndDlg, L"Removing Keyboard Hooks.", L"CustFunc Add-In", 0);
                 }
             }
-            break;                   
+
+            // Close and release the named mutex if we created it
+            if (ghHookMutex) {
+                CloseHandle(ghHookMutex);
+                ghHookMutex = NULL;
+            }
+
+            break;
     }
     return TRUE;
 }
+//
+// Changes implemented from GitHub Copilot to detect multiple instances of Mathcad
+// • Added a named global mutex(ghHookMutex) to detect an existing loaded / active instance that has already installed the keyboard hook.
+// • In DLL_PROCESS_ATTACH I create Global\CustFunc_Hook_v1.If it already exists(GetLastError() == ERROR_ALREADY_EXISTS) the function returns FALSE to abort loading this DLL instance(per your requirement : do not load the DLL when the hook is present).
+// • On detach, the mutex handle is closed and the keyboard hook is uninstalled as before.
+// Reasoning
+// • Windows does not provide a direct API to enumerate other processes' hooks reliably. A named global synchronization object is a robust, cross-process way to detect "an owner" that previously installed the hook and prevent duplicate installs and duplicate DLL loads.
+// • Returning FALSE from DLL_PROCESS_ATTACH prevents this copy of the DLL from being loaded when another instance is active, matching your instruction.
