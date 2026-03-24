@@ -26,7 +26,7 @@ For DLLs containing a large number of Custom Functions, this means that the user
 This information has to be memorized or looked up in a reference document outside of Mathcad Prime for every additional function and seriously degrades the usefulness of the Custom Functions capability.  
 </details>
 
-# The CustFunc Add-in v1.2
+# The CustFunc Add-in v1.3
 
 The **CustFunc** add-in DLL does not actually register any new functions, but provides interface integration functionality for any other Custom Function DLLs that are loaded.  Mathcad Prime's built-in functions, as mentioned above, can be typed into a math region or inserted from the **_Functions_** panel.  The **_Functions_** panel is opened from Functions ribbon (the All Functions button) or by pressing the hot-key, `<F2>`.  **CustFunc** uses the hot-key `<F3>` to launch an **_Insert Custom Function_** dialog box, providing the user with a list of categorized Custom Functions for insertion onto the active worksheet at the current cursor location.  The **_Insert Custom Function_** dialog box will be populated with any XML function files found in Mathcad Prime's installation directory under `"Custom Functions\docs"`.
 
