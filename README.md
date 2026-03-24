@@ -102,7 +102,7 @@ Sample XML files are located in the `\sampleXML` folder of this repository.  The
    | **UserPack.xml**      | -     | _Trivial example for accessing Mathcad's UserPack example_ |
 
 
-# CustFunc Enhancements
+# CustFunc Enhancements over Legacy Mathcad
 
 There are a few enhancements that CustFunc offers over legacy Insert Function behavior.  These include:
 
@@ -185,5 +185,6 @@ Contributions to this code repository are welcome and encouraged through:
     **if97_SI_EN.XML** &emsp;&emsp;&emsp;&emsp; _(use for default SI units per /CoolProp/IF97)_  
     **if97_IAPWS_EN.XML** &emsp;&emsp; _(use if IF97 is compiled with IAPWS\_UNITS defined)_  
 
-- **v1.3** [ 03/23/26 ]
-  - Allow parameters to be inserted as a single element \[vector\] using square brackets to indicate to the user that a vector value (typically a vertical one column vector) should be entered as the parameter.
+- **v1.3** [ 03/24/26 ]
+  - Allow parameters to be inserted as a single element \[vector\] using square brackets to indicate to the user that a vector value (typically a vertical one column vector) should be entered as the parameter.  This was needed for CoolProp functionality, but may be useful for other Custom Functions needing to display vector input parameters.
+  - CustFunc detects if it is already loaded if a previous instance of Mathcad Prime is already open.  The CustFunc pop-up can be used across multiple instances of Mathcad Prime that are opened.  Only caveat is if the first Mathcad Prime instance is closed, the Custfunc add-in will be closed and the later instances of Mathcad Prime will no longer have access to the CustFunc pop-up.  Closing all instances of Mathcad Prime and restarting will re-instate the keyboard hooks to activate the CustFunc pop-up again.
