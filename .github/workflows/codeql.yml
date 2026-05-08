@@ -28,8 +28,8 @@ on:
       - '**/*.png'
       - '**/*.xml'
       - '**/*.rc'
-  schedule:
-    - cron: '25 23 * * 1'
+#  schedule:
+#    - cron: '25 23 * * 1'
 
 jobs:
   analyze:
