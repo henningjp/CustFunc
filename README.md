@@ -1,15 +1,17 @@
 <img width="703" height="185" alt="CustFunc" src="https://github.com/user-attachments/assets/45e8d907-750b-407e-9b2f-ae63999b9382" />
 
+![GitHub Release](https://img.shields.io/github/v/release/henningjp/CustFunc?display_name=release)  ![Static Badge](https://img.shields.io/badge/Language-C%2B%2B-blue?logo=cplusplus) [![Static Badge](https://img.shields.io/badge/TinyXML2-10.0.0-blue?logo=xml)](https://github.com/leethomason/tinyxml2)
+
 # CustFunc add-in DLL for PTC Mathcad Prime
 
 While Mathcad Prime does contain a Functions panel for inserting built-in functions, it does not allow for incorporation of categorized Custom Functions into that interface.
 
 <details>
 <summary><b>Background</b><br><br></summary>
-In the very early versions of Mathcad Prime, PTC carried forward the Legacy Mathcad capability of allowing users to write Custom Functions for Mathcad through a compiled C++ DLL.  These DLLs are placed in the ``Custom Functions`` directory and loaded when Mathcad Prime is launched.  In fact, C++ code for legacy Mathcad Custom Functions (formerly UserEFI functions) can be recompiled as Mathcad Prime Custom Functions with no change the the code (just by linking to the appropriate Mathcad Prime libraries).  This is a great feature of Mathcad Prime since many individuals and companies have built and rely function libraries for Legacy Mathcad. 
-
+In the very early versions of Mathcad Prime, PTC carried forward the Legacy Mathcad capability of allowing users to write Custom Functions for Mathcad through a compiled C++ DLL.  These DLLs are placed in the ``Custom Functions`` directory and loaded when Mathcad Prime is launched.  In fact, C++ code for legacy Mathcad Custom Functions (formerly UserEFI functions) can be recompiled as Mathcad Prime Custom Functions with no change the the code (just by linking to the appropriate Mathcad Prime libraries).  This is a great feature of Mathcad Prime since many individuals and companies have built and rely on function libraries for Legacy Mathcad.
+<br><br>
 Each Custom Function DLL contains the mathematical coding for each function to be added.  Additionally, a ``FUNCTIONINFO`` structure is supplied that tells Mathcad Prime the address of each callable function, its callable "Mathcad" name, its parameter list, the types of each parameter, and return value type.  When loaded by Mathcad Prime, the first thing the DLL does is register a table of possible error messages and all of the ``FUNCTIONINFO`` structures so that the added functions can be called through the Mathcad interface.
-
+<br><br>
 However, one legacy feature that has still not been integrated into Mathcad Prime, is the ability to provide companion XML files that integrate Custom Functions documentation into the Mathcad interface, adding them to the list of internal functions under the Insert Functions panel under their own Function Category. 
 </details>
 
@@ -26,9 +28,21 @@ For DLLs containing a large number of Custom Functions, this means that the user
 This information has to be memorized or looked up in a reference document outside of Mathcad Prime for every additional function and seriously degrades the usefulness of the Custom Functions capability.  
 </details>
 
-# The CustFunc Add-in v1.3
+# Requirements
 
-The **CustFunc** add-in DLL does not actually register any new functions, but provides interface integration functionality for any other Custom Function DLLs that are loaded.  Mathcad Prime's built-in functions, as mentioned above, can be typed into a math region or inserted from the **_Functions_** panel.  The **_Functions_** panel is opened from Functions ribbon (the All Functions button) or by pressing the hot-key, `<F2>`.  **CustFunc** uses the hot-key `<F3>` to launch an **_Insert Custom Function_** dialog box, providing the user with a list of categorized Custom Functions for insertion onto the active worksheet at the current cursor location.  The **_Insert Custom Function_** dialog box will be populated with any XML function files found in Mathcad Prime's installation directory under `"Custom Functions\docs"`.
+- **OS:** PTC Mathcad Prime only runs on Windows ![Static Badge](https://img.shields.io/badge/OS-MS_Windows_10-blue)  ![Static Badge](https://img.shields.io/badge/OS-MS_Windows_11-blue)
+- **Mathcad Version:** PTC Mathcad Prime 3.0 or greater, but versions 3.0 through 6.0 are deprecated [![Static Badge](https://img.shields.io/badge/Mathcad_Prime-7.0%2B-green)](https://www.ptc.com/en/products/mathcad)
+- **Custom Functions:** Any add-in Custom Functions library (DLL) for which you want to provide the user with an insert functions pop-up, complete with function/parameter syntax, function description, and insert button.
+
+### To Build
+
+- **Compiler:** **_ONLY_** if you plan on building CustFunc, rather than downloading the Release DLL, you will need Microsoft Visual Studio 2022 or later, Professional or Community versions, to load the C++ solution files in the build directory. [![Static Badge](https://img.shields.io/badge/MS_Visual_Studio-2022%2B-blue)](https://visualstudio.microsoft.com/)
+- **Dependencies:** This build depends on the XML processor [![Static Badge](https://img.shields.io/badge/TinyXML2-10.0.0-blue?logo=xml)](https://github.com/leethomason/tinyxml2). This repository includes the frozer v11.0.0 C++ code (tinyxml2.cpp) and header file (tinyxml2.h), which should not need to be updated or independently retrieved.
+
+
+# The CustFunc Add-in
+
+The **CustFunc** add-in DLL does not actually register any new functions, but provides interface integration functionality for any other Custom Function DLLs that are loaded.  Mathcad Prime's **built-in** functions, as mentioned above, can be typed into a math region or inserted from the **_Functions_** panel.  The native **_Functions_** panel is opened from Functions ribbon (the All Functions button) or by pressing the hot-key, `<F2>`.  **CustFunc** uses the hot-key `<F3>` to launch an **_Insert Custom Function_** dialog box, providing the user with a list of categorized Custom Functions for insertion onto the active worksheet at the current cursor location.  The **_Insert Custom Function_** dialog box will be populated with any XML function files found in Mathcad Prime's installation directory under `"Custom Functions\docs"`.
 
 ![Insert Custom Functions Panel](https://github.com/henningjp/CustFunc/blob/master/images/CustFuncPanel.png)
 
