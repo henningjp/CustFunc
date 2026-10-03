@@ -199,10 +199,20 @@ void SendAffine(wchar_t chFC)
 /*   indices.                                                                                          */
 /*******************************************************************************************************/
 
+// Syntax string shown in the dialog: name(params), or a placeholder if there is nothing to insert
+static std::wstring DialogSyntax(const FuncDef& f)
+{
+    if (f.LocalName.empty() || (f.LocalName == L"INCLUDE" && f.Params.empty()))
+        return L"<nothing to insert>";
+    return f.LocalName + L"(" + f.Params + L")";
+}
+
 int SendFunction2Mathcad(HWND mcad, int iC, int iF)
 {
     std::wstring FuncString = CatVec[iC].Functions[iF].LocalName;     // Get Function string
     std::wstring strp = CatVec[iC].Functions[iF].Params;
+    if (FuncString.empty() || (FuncString == L"INCLUDE" && strp.empty()))   // Nothing to insert (empty XML element)
+        return 0;                                                          //    so send nothing to Mathcad
     if (FuncString == L"INCLUDE")   // This is an include statement, not a normal funciton.
     {
         FuncString = strp;                // Get Path to include file
@@ -596,8 +606,7 @@ INT_PTR CALLBACK CFDlgProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
         iFunction = (int)SendMessage(hwndFList, LB_GETITEMDATA, iFindex, 0);
 
          //Set Text for the Function Call Edit Control (IDC_EDITFUNC) to the first function call string
-        std::wstring tLocal = CatVec[iCategory].Functions[iFunction].LocalName;
-        tLocal.append(L"(").append(CatVec[iCategory].Functions[iFunction].Params).append(L")");
+        std::wstring tLocal = DialogSyntax(CatVec[iCategory].Functions[iFunction]);
         SetWindowText(GetDlgItem(hDlg, IDC_EDITFUNC), (LPCWSTR)tLocal.c_str());
 
        //Set Text for the Description Edit Control (IDC_EDITDESC) to the first function description string
@@ -635,8 +644,7 @@ INT_PTR CALLBACK CFDlgProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
                 iFunction = (int)SendMessage(hwndFList, LB_GETITEMDATA, 0, 0);
 
                 //Set Text for the Function Call Edit Control (IDC_EDITFUNC) to the first function call string
-                std::wstring tLocal = CatVec[iCategory].Functions[iFunction].LocalName;
-                tLocal.append(L"(").append(CatVec[iCategory].Functions[iFunction].Params).append(L")");
+                std::wstring tLocal = DialogSyntax(CatVec[iCategory].Functions[iFunction]);
                 SetWindowText(GetDlgItem(hDlg, IDC_EDITFUNC), (LPCWSTR)tLocal.c_str());
 
                 //Set Text for the Description Edit Control (IDC_EDITDESC) to the first function description string
@@ -654,8 +662,7 @@ INT_PTR CALLBACK CFDlgProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
                 iFindex = (int)SendMessage(GetDlgItem(hDlg, IDC_LISTFUNC), LB_GETCURSEL, 0, 0);
                 iFunction = (int)SendMessage(GetDlgItem(hDlg, IDC_LISTFUNC), LB_GETITEMDATA, iFindex, 0);
                                                             // Update function call and description fields
-                std::wstring tLocal = CatVec[iCategory].Functions[iFunction].LocalName;
-                tLocal.append(L"(").append(CatVec[iCategory].Functions[iFunction].Params).append(L")");
+                std::wstring tLocal = DialogSyntax(CatVec[iCategory].Functions[iFunction]);
                 SetWindowText(GetDlgItem(hDlg, IDC_EDITFUNC), (LPCWSTR)tLocal.c_str());
                 SetWindowText(GetDlgItem(hDlg, IDC_EDITDESC), (LPCWSTR)CatVec[iCategory].Functions[iFunction].Description.c_str());
             }
@@ -745,21 +752,20 @@ void PopXMLError(tinyxml2::XMLError errnum, const std::wstring& fileName)
 /*   here to make it easier to use; counting characters, allocating memory, and returning the          */
 /*   converted wide-string.                                                                            */
 /*******************************************************************************************************/
-/*   TODO: Might want to consider some pop-up error message boxes here. Currently just returns null.   */
-wchar_t* utf8_to_wchar(const char* input)
+/*   Returns an empty string if input is null (e.g. an empty XML element) or the conversion fails.    */
+std::wstring utf8_to_wchar(const char* input)
 {
-    wchar_t* Buffer;                  // pointer to buffer to wide-character Buffer (null)
-    int BuffSize = 0, Result = 0;     // Init Buffer and Result sizes
+    if (input == NULL) return std::wstring();                                  // Empty XML elements give a null GetText()
 
-    BuffSize = MultiByteToWideChar(CP_UTF8, 0, input, -1, NULL, 0);  // get length of input char* string in "chars" (not bytes)
-    Buffer = (wchar_t*)malloc(sizeof(wchar_t) * BuffSize);           // allocate number of characters needed to wide string
-    if (Buffer)                                                      // IF the buffer size is > 0
-    {
-        Result = MultiByteToWideChar(CP_UTF8, 0, input, -1, Buffer, BuffSize); // Convert (char*)input to wide (wchar_t*)Buffer
-    }
-                                                                     //
-    return ((Result > 0) && (Result <= BuffSize)) ? Buffer : NULL;   // IF non-zero length and we didn't overflow the Buffer
-                                                                     //    return the wide string (wchar_t*)Buffer, otherwise null
+    int BuffSize = MultiByteToWideChar(CP_UTF8, 0, input, -1, NULL, 0);        // get length of input in wide characters (incl. null)
+    if (BuffSize <= 0) return std::wstring();                                  // Conversion failed
+
+    std::wstring Buffer((size_t)BuffSize, L'\0');                              // Buffer is freed automatically
+    int Result = MultiByteToWideChar(CP_UTF8, 0, input, -1, &Buffer[0], BuffSize);  // Convert (char*)input to wide Buffer
+    if (Result <= 0) return std::wstring();
+
+    Buffer.resize((size_t)Result - 1);                                         // Drop the trailing null terminator
+    return Buffer;
 }
 
 
