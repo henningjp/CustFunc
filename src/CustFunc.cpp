@@ -14,6 +14,7 @@ namespace fs = std::filesystem;
 
 // Dialog Resource
 #include "resource.h"
+#include "cfversion.h"        // CF_VERSION_STRING, shared with the version resource
 
 #ifndef NOMINMAX // Kill windows' horrible min() and max() macros
 #define NOMINMAX
@@ -26,7 +27,9 @@ enum { MC_STRING = STRING };  // substitute enumeration variable MC_STRING for S
 
 
 // CustFunc Mathcad Add-in Version
-std::wstring CFVersion = L"1.3";       // Mathcad Add-in version number
+#define CF_WIDEN2(x) L##x
+#define CF_WIDEN(x) CF_WIDEN2(x)
+std::wstring CFVersion = CF_WIDEN(CF_VERSION_STRING);   // Mathcad Add-in version number (set in resource\cfversion.h)
 
 #define SHIFTED 0x8000
 #define TEXTLENGTH 10
