@@ -228,7 +228,7 @@ int SendFunction2Mathcad(HWND mcad, int iC, int iF)
     }
     else                            // normal funciton
     {
-        for (auto& c : strp) c = toupper(c);                              // make temp UCase version of Params
+        for (auto& c : strp) c = towupper(c);                             // make temp UCase version of Params
         if (strp != L"CONST")                                             // if Params <> const
             FuncString.append(L"(").append(CatVec[iC].Functions[iF].Params);  // append parameters, no closing paren
     }
@@ -706,9 +706,9 @@ INT_PTR CALLBACK CFDlgProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
 /*******************************************************************************************************/
 bool isXML(const fs::path& p)
 {
-    std::string ext = p.extension().string();
-    for (auto& c : ext) c = toupper(c);
-    return (ext == ".XML");
+    std::wstring ext = p.extension().wstring();
+    for (auto& c : ext) c = towupper(c);
+    return (ext == L".XML");
 }
 
 /*******************************************************************************************************/
