@@ -1,6 +1,6 @@
 <img width="703" height="185" alt="CustFunc" src="https://github.com/user-attachments/assets/45e8d907-750b-407e-9b2f-ae63999b9382" />
 
-![GitHub Release](https://img.shields.io/github/v/release/henningjp/CustFunc?display_name=release)  ![Static Badge](https://img.shields.io/badge/Language-C%2B%2B-blue?logo=cplusplus) [![Static Badge](https://img.shields.io/badge/TinyXML2-10.0.0-blue?logo=xml)](https://github.com/leethomason/tinyxml2)
+![GitHub Release](https://img.shields.io/github/v/release/henningjp/CustFunc?display_name=release)  ![Static Badge](https://img.shields.io/badge/Language-C%2B%2B-blue?logo=cplusplus) [![Static Badge](https://img.shields.io/badge/TinyXML2-9.0.0-blue?logo=xml)](https://github.com/leethomason/tinyxml2)
 
 # CustFunc add-in DLL for PTC Mathcad Prime
 
@@ -37,7 +37,8 @@ This information has to be memorized or looked up in a reference document outsid
 ### To Build
 
 - **Compiler:** **_ONLY_** if you plan on building CustFunc, rather than downloading the Release DLL, you will need Microsoft Visual Studio 2022 or later, Professional or Community versions, to load the C++ solution files in the build directory. [![Static Badge](https://img.shields.io/badge/MS_Visual_Studio-2022%2B-blue)](https://visualstudio.microsoft.com/)
-- **Dependencies:** This build depends on the XML processor [![Static Badge](https://img.shields.io/badge/TinyXML2-10.0.0-blue?logo=xml)](https://github.com/leethomason/tinyxml2). This repository includes the frozer v11.0.0 C++ code (tinyxml2.cpp) and header file (tinyxml2.h), which should not need to be updated or independently retrieved.
+- **Mathcad Prime install:** The project looks for `MCADINCL.H` and `mcaduser.lib` in `C:\Program Files\PTC\Mathcad Prime 12.0.0.0\Custom Functions`.  Edit the include and library paths in `build\CustFunc.vcxproj` if Prime is installed elsewhere or you build against a different version.  Only the 64-bit `Release|x64` and `Debug|x64` configurations are provided.
+- **Dependencies:** This build depends on the XML processor [![Static Badge](https://img.shields.io/badge/TinyXML2-9.0.0-blue?logo=xml)](https://github.com/leethomason/tinyxml2). This repository includes the frozen v9.0.0 C++ code (tinyxml2.cpp) and header file (tinyxml2.h), which should not need to be updated or independently retrieved.
 
 
 # The CustFunc Add-in
@@ -92,6 +93,8 @@ As many functions as needed for a specific DLL can be loaded in this XML file, t
 > **_NOTE:_** The `<name>` tag can contain a "user friendly" name and will be inserted into the **CustFunc** dialog box in the Function Name ListBox.  The `<local_name>` is the actual function syntax that will be inserted on the Mathcad Prime worksheet.  These names can be the same.  If `<local_name>` is omitted, the `<name>` tag will be used as the actual function syntax. 
 
 > **_NOTE:_** The `<params>` tag can contain descriptive comma-separated variable names and will be inserted into the function in the Mathcad worksheet surrounded by parentheses.  All spaces will be removed.  Parameters can be simple variable names, quoted "strings", or bracketed \[vector\] names to help the user understand what should be entered.
+
+> **_NOTE:_** When the XML files are loaded, `<params>` strings are checked and a warning message identifies the function and file if a problem is found.  Single quotes are replaced with double quotes, and a string with a missing opening or closing double quote has the matching quote added.  A function with a double quote in the middle of a parameter or more than two quotes in one parameter is not loaded.  Any `^` character in `<local_name>` or `<params>` is removed.  An entry with an empty `<category>` (or no category in the first function of a file) is listed under "USER".  Please correct the XML file when a warning appears.
 ---
 
 </details>
@@ -122,7 +125,7 @@ There are a few enhancements that CustFunc offers over legacy Insert Function be
 
 - The extended character set, including greek symbols (e.g. α, ε, Δ, etc.) and other technical symbols, operators, and diacritical marks, can be entered into the function name, local_name, and/or description.  The easiest way to enter these symbols is by copying them from the Microsoft Character Map application and pasting into the XML sub-elements. 
 - Textual subscripts can be entered by embedding a period in the function's <local_name> element. 
-- Constant values can be input with no parameters by omitting the `<parameters>` element or using a `<parameter>` value of "const". For example:
+- Constant values can be input with no parameters by omitting the `<params>` element or using a `<params>` value of "const". For example:
    ```XML
   <function>
     <name>Constants: Critical Temperature</name>
@@ -145,7 +148,7 @@ There are a few enhancements that CustFunc offers over legacy Insert Function be
   </function>
    ```
 
-These enhancements allow XML files to be provided not only for companion DLLs, but also for included worksheets that contain user functions and constants (entered with a `<parameter>` element of "const").
+These enhancements allow XML files to be provided not only for companion DLLs, but also for included worksheets that contain user functions and constants (entered with a `<params>` element of "const").
 
 # Installing CustFunc
 
@@ -156,13 +159,13 @@ To install CustFunc in your local Mathcad Prime installation:
 3. Copy the `CustFunc.dll` file to Mathcad Prime's `Custom Functions` directory.
 4. Downlaod any of the sample XML files from the repository or extract them from the SourceCode.zip file for this release.
 5. Copy sample XML files (or create your own custom XML files) into the `Custom Functions\docs` directory (create this `\docs` directory if it doesn't already exist).
-6. Copy frequently used XMCD include files into the `Custom Functions\docs` directory or edit the XML files to insert them using full path to another local or shared location.
+6. Copy frequently used MCDX include files into the `Custom Functions\docs` directory or edit the XML files to insert them using full path to another local or shared location.
 7. Restart Mathcad Prime.
 8. On any worksheet, press `<F3>` to pop up the **Insert Custom Functions** panel.  At least one XML file must exist in the `docs` directory or an error message will pop up indicating that no XML files were found.
 
-# Use of XMCD Include Files
+# Use of MCDX Include Files
 
-CustFunc works with **Include Worksheet** functions in addition to Custom Function DLL's and can now use XML entries that automatically insert the include statement directly into a worksheet with the path to the desired include file (without having to remember and/or browse to its stored location every time).  The example IF97 and REFPROP XML files above will work with the .xmcd include files found in their respective repositories to provide Mathcad wrapper functions that:
+CustFunc works with **Include Worksheet** functions in addition to Custom Function DLL's and can now use XML entries that automatically insert the include statement directly into a worksheet with the path to the desired include file (without having to remember and/or browse to its stored location every time).  The example IF97 and REFPROP XML files above will work with the .mcdx include files found in their respective repositories to provide Mathcad wrapper functions that:
 1. Call their respective add-in DLL Custom Functions
 2. Provide more standard math notation for the function names
 3. Handle input values with units and convert them to the units requried by the Custom Functions in the add-in DLL
@@ -202,3 +205,36 @@ Contributions to this code repository are welcome and encouraged through:
 - **v1.3** [ 03/24/26 ]
   - Allow parameters to be inserted as a single element \[vector\] using square brackets to indicate to the user that a vector value (typically a vertical one column vector) should be entered as the parameter.  This was needed for CoolProp functionality, but may be useful for other Custom Functions needing to display vector input parameters.
   - CustFunc detects if it is already loaded if a previous instance of Mathcad Prime is already open.  The CustFunc pop-up can be used across multiple instances of Mathcad Prime that are opened.  Only caveat is if the first Mathcad Prime instance is closed, the Custfunc add-in will be closed and the later instances of Mathcad Prime will no longer have access to the CustFunc pop-up.  Closing all instances of Mathcad Prime and restarting will re-instate the keyboard hooks to activate the CustFunc pop-up again.
+
+- **v1.3.1** [ 10/03/26 ]
+  - Adversarial code review revealed a number of issues that protect Mathcad from crashing if the user's XML files are not set up correctly plus a memory leak on keyboard events.  Most of these were innocuous as long as the user followed instructions on the XML formatting and docs placement.
+
+  - **High Severity Findings** (all fixed)
+    1. Memory Leak in the keyboard hook
+    2. Potential crash on malformed or empty XML files
+    3. Potential crash on empty XML function elements (e.g., \<params>\</params>)
+    4. Category Bookkeeping: functions without categories and intermingled categories
+    5. Stale function index gave potential out-of-bounds crash when switching categories
+    6. Potential for an unreadable (protected) docs folder to crash Mathcad Prime
+  
+  - **Medium Severity Findings** (all fixed)
+
+    7. F3 dialog inside the keyboard hook callback (Windows could disable the hook)
+    8. GetAsyncKeyState (instead of GetKeyState) prevents missed triggers (never observed)
+    9. Check of active window for pop-up must **Start** with "PTC Mathcad Prime".  Window titles that only included that string may have allowed CustFunc to open a dialog there (e.g., a File in NotePad++ titled "*PTC Mathcad Prime Testing.txt*", or a web page open to something like "*PTC Mathcad Prime User Forum*")
+    10. Use wide-char version of `towupper` (possible greek char issues and XML extension case)
+    11. Handle cases with "param" strings missing a quote or using single-quotes (warn user on load)
+    12. Check for, remove, and warn on `^` character (e.g., `x^2`) in XML (not allowed)
+    13. Checking for valid paths in INCLUDE entries (relative vs full path, replace forward slashes). Corrects forward slashes in INCLUDE paths and allows for includes in subfolders under the docs folder (e.g. `Includes\if97_Units_IAPWS.mcdx`)
+    14. Potential issue with °C and °F insertions (a side benefit of this code) due to missing \<key up> sequence. - It never failed before and users would only want one of these units in a row anyway.
+    15. SetActiveWindow() is being ignored because of item 7, but testing shows this is a non-issue and the correct window is selected anyway. (code comment only)
+    16. Machine wide Mutex: May only affect Mathcad Prime running on Virtual Servers - maybe not.  Marked for testing and will address later.
+    17. Debug and Win32 Configurations - Mathcad Prime is 64-bit only, so
+        - removed the Win32 configurations,
+        - copied the Release configuration to Debug,
+        - Hard-coded the include and library paths to the Prime 12 Custom Functions folder.
+    18. CI: CodeQL doesn't do a compile check (problematic since there's no Mathcad library to link to on GitHub - Address later)
+    19. Doc mis-matches (addressed)
+    20. Removed unused variables in the code.
+    21. XML files containing non-ANSI characters in the filename (rare) will open without error
+    22. resource.h existed in two folders (\includes and \resource); removed the duplicate so there is only one copy, in the \resource folder
