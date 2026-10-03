@@ -593,6 +593,9 @@ INT_PTR CALLBACK CFDlgProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
         SendMessage(hwndCList, LB_SETCURSEL, iCindex, 0);  // Set Selector to last Category item clicked (init 0)
         iCategory = (int)SendMessage(hwndCList, LB_GETITEMDATA, iCindex, 0);
 
+        if (iFindex < 0 || iFindex >= (int)CatVec[iCategory].Functions.size())  // Remembered function must exist in this category
+            iFindex = 0;
+
         // Add items to the Function List
         HWND hwndFList = GetDlgItem(hDlg, IDC_LISTFUNC);   // Get the Function ListBox handle
         SendMessage(hwndFList, WM_SETREDRAW, FALSE, 0);    // Temporarily turn off Redraw
@@ -630,6 +633,7 @@ INT_PTR CALLBACK CFDlgProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
             {                                               // Get the index of the selected item
                 iCindex = (int)SendMessage(GetDlgItem(hDlg, IDC_LISTCAT), LB_GETCURSEL, 0, 0);
                 iCategory = (int)SendMessage(GetDlgItem(hDlg, IDC_LISTCAT), LB_GETITEMDATA, iCindex, 0);
+                iFindex = 0;                                // New category: reset remembered function selection to first item
                                                             // Update Function Listbox for new category
                 HWND hwndFList = GetDlgItem(hDlg, IDC_LISTFUNC);   // Get the Function ListBox handle
                 SendMessage(hwndFList, WM_SETREDRAW, FALSE, 0);    // Temporarily turn off Redraw
