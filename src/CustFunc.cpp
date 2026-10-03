@@ -25,20 +25,14 @@ enum { MC_STRING = STRING };  // substitute enumeration variable MC_STRING for S
 #undef STRING                 // undefine STRING as it may conflict with STRING in other includes
 
 
-// RefProp Mathcad Add-in Version
+// CustFunc Mathcad Add-in Version
 std::wstring CFVersion = L"1.3";       // Mathcad Add-in version number
-
-// Setup Dialog Window for debugging
-HWND hwndDlg;  // Generic Dialog handle for pop-up message boxes (MessageBox) when needed
 
 #define SHIFTED 0x8000
 #define TEXTLENGTH 10
 
-bool ctrlDown = false;
-bool shiftDown = false;
 bool bhooked = false;
 bool cfDebug = false;
-bool fileDebug = true;
 
 // Global Category and Function indices;
 int iCategory;
@@ -186,7 +180,7 @@ void SendAffine(wchar_t chFC)
     UINT uSent = SendInput(ARRAYSIZE(keys), keys, sizeof(INPUT));
     if (uSent != ARRAYSIZE(keys))
     {
-        MessageBox(hwndDlg, L"Send °C or °F to Mathcad Failed!", L"Keyboard Hook Process", 0);
+        MessageBox(NULL, L"Send °C or °F to Mathcad Failed!", L"Keyboard Hook Process", 0);
     }
 
 }
@@ -386,13 +380,13 @@ int SendFunction2Mathcad(HWND mcad, int iC, int iF)
             keys.push_back(input);
         }
 
-        SetActiveWindow(mcad);                                              // Make sure user hasn't clicked away
+        SetActiveWindow(mcad);                                              // No effect from a non-Mathcad thread; focus returns to Mathcad when the dialog closes
         UINT uSent = SendInput((UINT)keys.size(), keys.data(), sizeof(INPUT));    // send input to current window
 
         if (uSent != (UINT)keys.size())                                     // if error
         {                                                                   //    pop a message to user
             FuncString.insert(0, L"Send UNICODE Function string, [").append(L"] to Mathcad Failed!");
-            MessageBox(hwndDlg, FuncString.c_str(), L"Custom Function Dialog Process", 0);
+            MessageBox(NULL, FuncString.c_str(), L"Custom Function Dialog Process", 0);
             return 1;
         }                                                                   // NOTE: This should never happen
     }
@@ -433,7 +427,7 @@ static DWORD WINAPI DialogThreadProc(LPVOID param)
 /*******************************************************************************************************/
 /*   Low-Level Keyboard Hook Call Back Process.                                                        */
 /*                                                                                                     */
-/*   Trap <Shift><F2> key pressed, but only if the "PTC Mathcad Prime*" window is active.              */
+/*   Trap <F3> key pressed, but only if the "PTC Mathcad Prime*" window is active.                     */
 /*   If TRUE - Open the Custom Function Dialog Box through the Windows API,                            */
 /*   Otherwise, ignore the keystrokes.                                                                 */
 /*   ALWAYS pass the Windows Message on to the next Windows hook!                                      */
@@ -464,7 +458,7 @@ LRESULT CALLBACK LowLevelKeyboardProc(int nCode, WPARAM wParam, LPARAM lParam)
             case WM_KEYDOWN:            // Check if any key was pressed - KEYDOWN
             {
                 // Check if F3 pressed; gets shift key state on the fly.
-                if (hookStruct->vkCode == VK_F3) {    // && (GetKeyState(VK_SHIFT) & SHIFTED) <== Switch from <Shift>F2 to F3
+                if (hookStruct->vkCode == VK_F3) {   
 
                     // Don't block the hook: run the dialog on its own thread and return right away.
                     if (InterlockedCompareExchange(&gDialogOpen, 1, 0) == 0)      // Only if a dialog is not already open
@@ -475,7 +469,7 @@ LRESULT CALLBACK LowLevelKeyboardProc(int nCode, WPARAM wParam, LPARAM lParam)
                         else
                             InterlockedExchange(&gDialogOpen, 0);                 // Thread not created; allow another try
                     }
-                }   // Do not return. the <F2> key might be for someone else.
+                }   // Do not return. the <F3> key might be for someone else.
 
                 // Check if <Ctrl><Shift>">" was pressed to insert "°F" at Mathcad Cursor Location
                 if (hookStruct->vkCode == VK_OEM_PERIOD && (GetAsyncKeyState(VK_SHIFT) & SHIFTED) && (GetAsyncKeyState(VK_CONTROL) & SHIFTED))
@@ -764,7 +758,7 @@ void PopXMLError(tinyxml2::XMLError errnum, const std::wstring& fileName)
     case tinyxml2::XML_ELEMENT_DEPTH_EXCEEDED: errmsg.append(L"Element Depth Exceeded"); break;
     default: errmsg.append(L"Unknown Error"); break;
     }
-    MessageBox(hwndDlg, errmsg.c_str(), L"TinyXML2 Error", MB_ICONERROR);
+    MessageBox(NULL, errmsg.c_str(), L"TinyXML2 Error", MB_ICONERROR);
     return;
 }
 
@@ -890,7 +884,7 @@ BOOL LoadDocs()    // Get DLL directory and the \docs directory underneath it
             if (fc < 1)                                                                                  // If no XML files found
             {
                 dbgmsg.append(L", \n\n").append(docsPath.wstring()).append(L"\n\n contains no XML files.");
-                MessageBox(hwndDlg, dbgmsg.c_str(), L"Getting DLL docs Directory", MB_ICONERROR);         //    Popup Error Message
+                MessageBox(NULL, dbgmsg.c_str(), L"Getting DLL docs Directory", MB_ICONERROR);         //    Popup Error Message
             }                                                                                            //    User Needs to Know (maybe)
             else                                                                                         // Otherwise => XML Files Found
             {
@@ -906,7 +900,13 @@ BOOL LoadDocs()    // Get DLL directory and the \docs directory underneath it
                 {
                     if (isXML(entry.path()))                                                             // If it's an XML File
                     {
-                        tinyxml2::XMLError eResult = doc.LoadFile( entry.path().string().c_str());         // Load the XML File into XMLDocument
+                        FILE* xmlFile = NULL;                                                                 // Open with the wide path so non-ANSI file names work
+                        tinyxml2::XMLError eResult = tinyxml2::XML_ERROR_FILE_COULD_NOT_BE_OPENED;
+                        if (_wfopen_s(&xmlFile, entry.path().c_str(), L"rb") == 0 && xmlFile != NULL)
+                        {
+                            eResult = doc.LoadFile(xmlFile);                                           // Load the XML File into XMLDocument
+                            fclose(xmlFile);
+                        }
                         if (eResult != tinyxml2::XML_SUCCESS)
                         {
                             PopXMLError(eResult, entry.path().filename().wstring());                                                          //   Pop an Error Message if not successful
@@ -961,7 +961,7 @@ BOOL LoadDocs()    // Get DLL directory and the \docs directory underneath it
                                     if (qfix == 1)   qmsg += L"A missing matching double quote was added.\n";
                                     if (qfix == 2)   qmsg += L"A double quote is misplaced or there are too many. This function was NOT loaded.\n\nPlease correct the XML file.";
                                     else             qmsg += L"\nUsed:\n\n" + tFunc.LocalName + L"(" + tFunc.Params + L")\n\nPlease correct the XML file.";
-                                    MessageBox(hwndDlg, qmsg.c_str(), L"Custom Function XML Warning", MB_ICONWARNING);
+                                    MessageBox(NULL, qmsg.c_str(), L"Custom Function XML Warning", MB_ICONWARNING);
                                     if (qfix == 2)                                                           // Cannot repair: skip this function
                                     {
                                         p_function = p_function->NextSiblingElement("function");
@@ -1013,13 +1013,13 @@ BOOL LoadDocs()    // Get DLL directory and the \docs directory underneath it
                         dbgmsg.append(CatVec[ic].Functions[i].Name);
                     }
                 }
-                if (cfDebug) MessageBox(hwndDlg, dbgmsg.c_str(), L"Getting DLL docs Directory", 0);  // IF cfDebug flag is true, pop-up debug message box
+                if (cfDebug) MessageBox(NULL, dbgmsg.c_str(), L"Getting DLL docs Directory", 0);  // IF cfDebug flag is true, pop-up debug message box
             }
         }
         else
         {
             dbgmsg.append(L", \n\n").append(docsPath.wstring()).append(L"\n\n... does not Exist!");  // Pop-up message box if docs directory does not exist.
-            MessageBox(hwndDlg, dbgmsg.c_str(), L"Getting DLL docs Directory", MB_ICONERROR);
+            MessageBox(NULL, dbgmsg.c_str(), L"Getting DLL docs Directory", MB_ICONERROR);
 
         }
     }
@@ -1071,7 +1071,7 @@ extern "C" BOOL WINAPI  DllEntryPoint (HINSTANCE hDLL, DWORD dwReason, LPVOID lp
             ghHookMutex = CreateMutexW(NULL, FALSE, L"Global\\CustFunc_Hook_v1");
             if (ghHookMutex != NULL && GetLastError() == ERROR_ALREADY_EXISTS)
             {
-                if (cfDebug) MessageBox(hwndDlg, L"CustFunc is already loaded (keyboard hook present). Aborting load.", L"CustFunc Add-In", 0);
+                if (cfDebug) MessageBox(NULL, L"CustFunc is already loaded (keyboard hook present). Aborting load.", L"CustFunc Add-In", 0);
                 CloseHandle(ghHookMutex);
                 ghHookMutex = NULL;
                 return FALSE; // Do not load this DLL instance because another is active.
@@ -1090,27 +1090,27 @@ extern "C" BOOL WINAPI  DllEntryPoint (HINSTANCE hDLL, DWORD dwReason, LPVOID lp
             {
                 std::string what = ex.what();
                 std::wstring wwhat = L"Error loading Custom Function XML files:\n\n" + std::wstring(what.begin(), what.end());
-                MessageBox(hwndDlg, wwhat.c_str(), L"CustFunc Add-In", MB_ICONERROR);
+                MessageBox(NULL, wwhat.c_str(), L"CustFunc Add-In", MB_ICONERROR);
             }
             catch (...)
             {
-                MessageBox(hwndDlg, L"Unknown error loading Custom Function XML files.", L"CustFunc Add-In", MB_ICONERROR);
+                MessageBox(NULL, L"Unknown error loading Custom Function XML files.", L"CustFunc Add-In", MB_ICONERROR);
             }
 
             if (docsLoaded)  // If we successfully loaded the XML docs
             {
                 // Attach the Keyboard Hook here and register the Keyboard Hook Callback Process
-                if (cfDebug) MessageBox(hwndDlg, L"Installing Hooks.", L"CustFunc Add-In", 0);
+                if (cfDebug) MessageBox(NULL, L"Installing Hooks.", L"CustFunc Add-In", 0);
                 if (!bhooked) {
                     hhk = SetWindowsHookEx(WH_KEYBOARD_LL, (HOOKPROC)LowLevelKeyboardProc, hDLL, 0);
                     bhooked = true;
                     if (hhk == NULL) {
                         bhooked = false;
-                        MessageBox(hwndDlg, L"Failed to install keyboard hook!", L"CustFunc Add-In", MB_ICONERROR);
+                        MessageBox(NULL, L"Failed to install keyboard hook!", L"CustFunc Add-In", MB_ICONERROR);
                     }
                 }
             }
-            // else error (no XML files), just break here and don't load the keyboard hooks.
+            // else LoadDocs failed (e.g. DLL path unavailable or an exception): don't load the keyboard hooks.
             break;
         }
 
@@ -1134,7 +1134,7 @@ extern "C" BOOL WINAPI  DllEntryPoint (HINSTANCE hDLL, DWORD dwReason, LPVOID lp
             if (bhooked) {
                 if (UnhookWindowsHookEx(hhk)) {
                     bhooked = false;
-                    if (cfDebug) MessageBox(hwndDlg, L"Removing Keyboard Hooks.", L"CustFunc Add-In", 0);
+                    if (cfDebug) MessageBox(NULL, L"Removing Keyboard Hooks.", L"CustFunc Add-In", 0);
                 }
             }
 
