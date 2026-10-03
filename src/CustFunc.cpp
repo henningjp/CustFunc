@@ -215,16 +215,11 @@ int SendFunction2Mathcad(HWND mcad, int iC, int iF)
         return 0;                                                          //    so send nothing to Mathcad
     if (FuncString == L"INCLUDE")   // This is an include statement, not a normal funciton.
     {
-        FuncString = strp;                // Get Path to include file
-        if (FuncString.find(L"\\") == std::wstring::npos)  // If Path is not fully qualified (i.e. X:\path\filename.ext)
-        {
-            if (!docsPath.empty())        // Look for the file in docsPath if it is not empty (filled by laoddocs()
-            {
-                FuncString.insert(0, L"\\");             // Prepend a backspace
-                FuncString.insert(0, docsPath.c_str());  // Prepend the full Custom Functions\docs path
-            }
-        }                                 // Otherwise, assume fully qualified and valid path to INCLUDE file
-        FuncString.insert(0, L"^"); //     prefix path with a carat "^" symbol
+        fs::path inclPath = strp;         // Get Path to include file
+        if (!inclPath.has_root_path() && !docsPath.empty())   // If Path is not fully qualified (no drive or root, i.e. drive:\...)
+            inclPath = docsPath / inclPath;                   //    Look for the file in the full Custom Functions\docs path
+        inclPath.make_preferred();                            // Use backslashes, so C:/x/y.mcdx also works
+        FuncString = L"^" + inclPath.wstring();               // prefix path with a carat "^" symbol
     }
     else                            // normal funciton
     {
