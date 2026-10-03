@@ -423,7 +423,7 @@ LRESULT CALLBACK LowLevelKeyboardProc(int nCode, WPARAM wParam, LPARAM lParam)
             // Buffer is freed automatically on scope exit; size is in characters, +1 for null terminator
             std::vector<wchar_t> wnd_title((size_t)cTextLen + 1, L'\0');
             if (GetWindowText(hwnd, wnd_title.data(), cTextLen + 1) > 0)
-                ptcFound = (std::wcsstr(wnd_title.data(), L"PTC Mathcad Prime") != NULL);  // See if title contains "PTC Mathcad Prime"
+                ptcFound = (std::wcsncmp(wnd_title.data(), L"PTC Mathcad Prime", 17) == 0);  // See if title starts with "PTC Mathcad Prime"
         }
         if (ptcFound)                                            // If yes (not NULL)...
         {
