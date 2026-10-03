@@ -1,0 +1,40 @@
+// Version information resource for CustFunc.dll.
+// Shows up in File Explorer under right-click > Properties > Details.
+// The version number comes from cfversion.h; do not hard-code it here.
+// This file is kept separate from CustFunc.rc so the Visual Studio resource editor leaves it alone.
+
+#include <winver.h>
+#include "cfversion.h"
+
+VS_VERSION_INFO VERSIONINFO
+ FILEVERSION CF_VERSION_NUMERIC
+ PRODUCTVERSION CF_VERSION_NUMERIC
+ FILEFLAGSMASK VS_FFI_FILEFLAGSMASK
+#ifdef _DEBUG
+ FILEFLAGS VS_FF_DEBUG
+#else
+ FILEFLAGS 0x0L
+#endif
+ FILEOS VOS_NT_WINDOWS32
+ FILETYPE VFT_DLL
+ FILESUBTYPE VFT2_UNKNOWN
+BEGIN
+    BLOCK "StringFileInfo"
+    BEGIN
+        BLOCK "040904B0"
+        BEGIN
+            VALUE "Comments", "https://github.com/henningjp/CustFunc"
+            VALUE "FileDescription", "CustFunc - Custom Function selector add-in for PTC Mathcad Prime"
+            VALUE "FileVersion", CF_VERSION_STRING
+            VALUE "InternalName", "CustFunc"
+            VALUE "LegalCopyright", "Copyright (c) 2023 Jeffery P. Henning (MIT License)"
+            VALUE "OriginalFilename", "CustFunc.dll"
+            VALUE "ProductName", "CustFunc"
+            VALUE "ProductVersion", CF_VERSION_STRING
+        END
+    END
+    BLOCK "VarFileInfo"
+    BEGIN
+        VALUE "Translation", 0x409, 1200
+    END
+END
