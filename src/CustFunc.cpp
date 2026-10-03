@@ -746,6 +746,59 @@ void PopXMLError(tinyxml2::XMLError errnum, const std::wstring& fileName)
 }
 
 /*******************************************************************************************************/
+/*   Check the double quotes in a <params> string.                                                     */
+/*   Parameters are separated by commas, and a Mathcad string parameter is always enclosed in a pair   */
+/*   of double quotes.  The string is split at commas and each parameter is checked:                   */
+/*       no quotes, or a quote at both the start and the end (a pair)  => OK                           */
+/*       a single quote at the start or the end                        => matching quote is added      */
+/*       anything else (quote in the middle, or more than two quotes)  => invalid                      */
+/*   Returns 0 if nothing was wrong, 1 if at least one parameter was repaired, and 2 if any parameter  */
+/*   is invalid (params is left unchanged in that case).                                               */
+/*******************************************************************************************************/
+static int FixParamQuotes(std::wstring& params)
+{
+    std::wstring out;
+    bool fixed = false;
+    size_t pos = 0;
+    while (true)
+    {
+        size_t comma = params.find(L',', pos);
+        std::wstring tok = params.substr(pos, (comma == std::wstring::npos) ? std::wstring::npos : comma - pos);
+        int q = (int)std::count(tok.begin(), tok.end(), L'"');
+        if (q > 0)
+        {
+            size_t first = tok.find_first_not_of(L" \t");        // First and last non-blank characters
+            size_t last = tok.find_last_not_of(L" \t");
+            bool qFirst = (tok[first] == L'"');
+            bool qLast = (tok[last] == L'"');
+            if (q == 2 && qFirst && qLast && first != last)
+            {                                                      // Matched pair around the parameter: OK
+            }
+            else if (q == 1 && qFirst)
+            {
+                tok.insert(last + 1, L"\"");                      // Opening quote only: add closing quote
+                fixed = true;
+            }
+            else if (q == 1 && qLast)
+            {
+                tok.insert(first, L"\"");                         // Closing quote only: add opening quote
+                fixed = true;
+            }
+            else
+                return 2;                                          // Quote in the middle, or too many quotes
+        }
+        out += tok;
+        if (comma == std::wstring::npos) break;
+        out += L',';
+        pos = comma + 1;
+    }
+    if (!fixed) return 0;
+    params = out;
+    return 1;
+}
+
+
+/*******************************************************************************************************/
 /*   Convert multi-byte utf8 char string to wide char string (utf-16)                                  */
 /*                                                                                                     */
 /*   TinyXML2 only reads UTF-8 encoded single byte characters.  ASCII version of Windows dialogs and   */
@@ -865,6 +918,28 @@ BOOL LoadDocs()    // Get DLL directory and the \docs directory underneath it
                                 tFunc.Params = utf8_to_wchar(p_function->FirstChildElement("params")->GetText()); // Get <params> text (convert from utf-8)
                             else                                                                           // otherwise...
                                 tFunc.Params = L"const";                                                   //        Assume this is a constant from a user function
+
+                            if (tFunc.LocalName != L"INCLUDE")                                             // Check quotes in <params>
+                            {
+                                std::wstring origParams = tFunc.Params;
+                                bool singleFixed = (tFunc.Params.find(L'\'') != std::wstring::npos);       // Single quotes (e.g. from Python examples)?
+                                std::replace(tFunc.Params.begin(), tFunc.Params.end(), L'\'', L'"');       // Mathcad strings need double quotes
+                                int qfix = FixParamQuotes(tFunc.Params);
+                                if (singleFixed || qfix != 0)
+                                {
+                                    std::wstring qmsg = L"Function \"" + tFunc.Name + L"\" in \"" + entry.path().filename().wstring() + L"\" has a problem in its parameters:\n\n" + origParams + L"\n\n";
+                                    if (singleFixed) qmsg += L"Single quotes were replaced with double quotes.\n";
+                                    if (qfix == 1)   qmsg += L"A missing matching double quote was added.\n";
+                                    if (qfix == 2)   qmsg += L"A double quote is misplaced or there are too many. This function was NOT loaded.\n\nPlease correct the XML file.";
+                                    else             qmsg += L"\nParameters used:\n\n" + tFunc.Params + L"\n\nPlease correct the XML file.";
+                                    MessageBox(hwndDlg, qmsg.c_str(), L"Custom Function XML Warning", MB_ICONWARNING);
+                                    if (qfix == 2)                                                           // Cannot repair: skip this function
+                                    {
+                                        p_function = p_function->NextSiblingElement("function");
+                                        continue;
+                                    }
+                                }
+                            }
 
                             if (NULL != p_function->FirstChildElement("description"))                      // if <description> Tag exists
                             {
