@@ -980,7 +980,20 @@ extern "C" BOOL WINAPI  DllEntryPoint (HINSTANCE hDLL, DWORD dwReason, LPVOID lp
             // found under Custom Functions\docs and install the Keyboard hook here when the DLL 
             // Process is attached.
 
-            if (LoadDocs())  // If we successfully loaded the XML docs
+            bool docsLoaded = false;
+            try { docsLoaded = LoadDocs(); }       // Exceptions (e.g. unreadable docs folder) must not escape the DLL entry point
+            catch (const std::exception& ex)
+            {
+                std::string what = ex.what();
+                std::wstring wwhat = L"Error loading Custom Function XML files:\n\n" + std::wstring(what.begin(), what.end());
+                MessageBox(hwndDlg, wwhat.c_str(), L"CustFunc Add-In", MB_ICONERROR);
+            }
+            catch (...)
+            {
+                MessageBox(hwndDlg, L"Unknown error loading Custom Function XML files.", L"CustFunc Add-In", MB_ICONERROR);
+            }
+
+            if (docsLoaded)  // If we successfully loaded the XML docs
             {
                 // Attach the Keyboard Hook here and register the Keyboard Hook Callback Process
                 if (cfDebug) MessageBox(hwndDlg, L"Installing Hooks.", L"CustFunc Add-In", 0);
