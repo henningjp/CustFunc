@@ -1,14 +1,13 @@
-# For most projects, this workflow file will not need changing; you simply need
-# to commit it to your repository.
+# CodeQL analysis for CustFunc.
 #
-# You may wish to alter this file to override the set of languages analyzed,
-# or to provide custom queries or build logic.
+# CustFunc is a Windows DLL that links to PTC's Mathcad Prime header (MCADINCL.H) and import
+# library (mcaduser.lib).  Those files are not part of this repository, so the build below
+# fetches them at run time from the CoolProp repository, where they are published with PTC's
+# permission for building Mathcad wrappers.  They are only used to compile and are never
+# committed here or uploaded as build output.  Please see the README in that folder for the
+# PTC terms of use.
 #
-# ******** NOTE ********
-# We have attempted to detect the languages in your repository. Please check
-# the `language` matrix defined below to confirm you have the correct set of
-# supported CodeQL languages.
-#
+# This build also acts as a compile check: if a change breaks the build, this workflow fails.
 name: "CodeQL Advanced"
 
 on:
@@ -19,7 +18,6 @@ on:
       - '**/*.txt'
       - '**/*.png'
       - '**/*.xml'
-      - '**/*.rc'
   pull_request:
     branches: [ "master" ]
     paths-ignore:
@@ -27,19 +25,23 @@ on:
       - '**/*.txt'
       - '**/*.png'
       - '**/*.xml'
-      - '**/*.rc'
+  workflow_dispatch:
 #  schedule:
 #    - cron: '25 23 * * 1'
+
+env:
+  # Commit of CoolProp/CoolProp that holds the Mathcad Prime header and library.
+  # Pinned so a change in that repository cannot silently change this build.
+  MATHCAD_LIBS_REPO: CoolProp/CoolProp
+  MATHCAD_LIBS_REF: 022b63e4f73ce25757e1d696a81ffeeba230c261
+  MATHCAD_LIBS_PATH: wrappers/MathCAD/Prime/libs
+  # The Visual Studio project looks for the Mathcad files in this folder, so create it on the runner.
+  MATHCAD_DIR: C:\Program Files\PTC\Mathcad Prime 12.0.0.0\Custom Functions
 
 jobs:
   analyze:
     name: Analyze (${{ matrix.language }})
-    # Runner size impacts CodeQL analysis time. To learn more, please see:
-    #   - https://gh.io/recommended-hardware-resources-for-running-codeql
-    #   - https://gh.io/supported-runners-and-hardware-resources
-    #   - https://gh.io/using-larger-runners (GitHub.com only)
-    # Consider using larger runners or machines with greater resources for possible analysis time improvements.
-    runs-on: ${{ 'windows-latest' }}
+    runs-on: windows-latest
     permissions:
       # required for all workflows
       security-events: write
@@ -56,54 +58,42 @@ jobs:
       matrix:
         include:
         - language: c-cpp
-          build-mode: none
-        # CodeQL supports the following values keywords for 'language': 'actions', 'c-cpp', 'csharp', 'go', 'java-kotlin', 'javascript-typescript', 'python', 'ruby', 'rust', 'swift'
-        # Use `c-cpp` to analyze code written in C, C++ or both
-        # Use 'java-kotlin' to analyze code written in Java, Kotlin or both
-        # Use 'javascript-typescript' to analyze code written in JavaScript, TypeScript or both
-        # To learn more about changing the languages that are analyzed or customizing the build mode for your analysis,
-        # see https://docs.github.com/en/code-security/code-scanning/creating-an-advanced-setup-for-code-scanning/customizing-your-advanced-setup-for-code-scanning.
-        # If you are analyzing a compiled language, you can modify the 'build-mode' for that language to customize how
-        # your codebase is analyzed, see https://docs.github.com/en/code-security/code-scanning/creating-an-advanced-setup-for-code-scanning/codeql-code-scanning-for-compiled-languages
+          build-mode: manual
+
     steps:
     - name: Checkout repository
       uses: actions/checkout@v4
 
-    # Add any setup steps before running the `github/codeql-action/init` action.
-    # This includes steps like installing compilers or runtimes (`actions/setup-node`
-    # or others). This is typically only required for manual builds.
-    # - name: Setup runtime (example)
-    #   uses: actions/setup-example@v1
+    - name: Fetch Mathcad Prime header and library
+      uses: actions/checkout@v4
+      with:
+        repository: ${{ env.MATHCAD_LIBS_REPO }}
+        ref: ${{ env.MATHCAD_LIBS_REF }}
+        path: mathcad-libs
+        sparse-checkout: ${{ env.MATHCAD_LIBS_PATH }}
+        sparse-checkout-cone-mode: false
 
-    # Initializes the CodeQL tools for scanning.
+    - name: Stage Mathcad files where the project expects them
+      shell: pwsh
+      run: |
+        New-Item -ItemType Directory -Force -Path $env:MATHCAD_DIR | Out-Null
+        Copy-Item "mathcad-libs/$env:MATHCAD_LIBS_PATH/MCADINCL.H" $env:MATHCAD_DIR
+        Copy-Item "mathcad-libs/$env:MATHCAD_LIBS_PATH/mcaduser.lib" $env:MATHCAD_DIR
+        Get-ChildItem $env:MATHCAD_DIR
+
+    # Initializes the CodeQL tools for scanning.  Must run before the build.
     - name: Initialize CodeQL
       uses: github/codeql-action/init@v4
       with:
         languages: ${{ matrix.language }}
         build-mode: ${{ matrix.build-mode }}
-        # If you wish to specify custom queries, you can do so here or in a config file.
-        # By default, queries listed here will override any specified in a config file.
-        # Prefix the list here with "+" to use these queries and those in the config file.
 
-        # For more details on CodeQL's query packs, refer to: https://docs.github.com/en/code-security/code-scanning/automatically-scanning-your-code-for-vulnerabilities-and-errors/configuring-code-scanning#using-queries-in-ql-packs
-        # queries: security-extended,security-and-quality
+    - name: Add MSBuild to PATH
+      uses: microsoft/setup-msbuild@v2
 
-    # If the analyze step fails for one of the languages you are analyzing with
-    # "We were unable to automatically build your code", modify the matrix above
-    # to set the build mode to "manual" for that language. Then modify this step
-    # to build your code.
-    # ℹ️ Command-line programs to run using the OS shell.
-    # 📚 See https://docs.github.com/en/actions/using-workflows/workflow-syntax-for-github-actions#jobsjob_idstepsrun
-    - name: Run manual build steps
-      if: matrix.build-mode == 'manual'
-      shell: bash
-      run: |
-        echo 'If you are using a "manual" build mode for one or more of the' \
-          'languages you are analyzing, replace this with the commands to build' \
-          'your code, for example:'
-        echo '  make bootstrap'
-        echo '  make release'
-        exit 1
+    - name: Build CustFunc (Release x64)
+      shell: pwsh
+      run: msbuild build/CustFunc.sln /p:Configuration=Release /p:Platform=x64 /m /v:minimal
 
     - name: Perform CodeQL Analysis
       uses: github/codeql-action/analyze@v4
