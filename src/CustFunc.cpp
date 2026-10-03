@@ -130,7 +130,7 @@ void SendAffine(wchar_t chFC)
     //keys[8].ki.wVk = (isC) ? 'C' : 'F';             // (Not using vKey)
     keys[5].ki.wVk = 0;                               // Send UNICODE Instead (no Shift req'd)
     keys[5].ki.wScan = chFC;                          // 'C' or 'F' Char (UP)
-    keys[5].ki.dwFlags = KEYEVENTF_KEYUP;
+    keys[5].ki.dwFlags = KEYEVENTF_UNICODE | KEYEVENTF_KEYUP;
 
     // Issue KEYDOWN/KEYUP for <Control> & <Shift> as user is likely still holding them down. ********
     // Have to release both left and right, in case user is using keys on either side
