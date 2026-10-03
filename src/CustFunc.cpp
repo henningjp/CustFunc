@@ -836,6 +836,7 @@ BOOL LoadDocs()    // Get DLL directory and the \docs directory underneath it
                         tinyxml2::XMLElement* p_root_element = doc.RootElement();                          // This should be the <FUNCTIONS> Tag
                         if (p_root_element == NULL)                                                        // Empty file: nothing to read
                             continue;
+                        tCat.CatName = L"USER";                                                            // Each file starts in the default category
                         tinyxml2::XMLElement* p_function = p_root_element->FirstChildElement("function");  // First <function> Tag
 
                         while (p_function)                                                                 // While <function> Tag valid
@@ -879,19 +880,18 @@ BOOL LoadDocs()    // Get DLL directory and the \docs directory underneath it
                             else                                                                           // otherwise
                                 CatNew = tCat.CatName;                                                     //       Assume previous function category (or default)
 
-                            if (CatNew != tCat.CatName)                                                    //    If category changed
+                            if (CatNew.empty()) CatNew = L"USER";                                          //    Empty <category> element: use default category
+                            tCat.CatName = CatNew;                                                         //    Remember category for functions that omit <category>
+                            int iFound = -1;                                                               //    Look for an existing category with this name
+                            for (int ic = 0; ic < (int)CatVec.size(); ic++)
+                                if (CatVec[ic].CatName == CatNew) { iFound = ic; break; }
+                            if (iFound < 0)                                                                //    Not found: add a new, empty category
                             {
-                                iCat++;                                                                    //      increment counter
-                                tFuncVec.clear();                                                          //      clear out temp function vector
-                                tFuncVec.push_back(tFunc);                                                 //      add new function to vector
-                                tCat.CatName = CatNew;                                                     //      put last read category in temp struct
-                                tCat.Functions = tFuncVec;                                                 //      put new func vector in temp struct
-                                CatVec.push_back(tCat);                                                    //      add new category to Vector
-                             }
-                            else                                                                           //    Otherwise
-                            {
-                                CatVec[iCat].Functions.push_back(tFunc);                                   //      Just add new function to current category
+                                Category newCat = { CatNew, FuncVec() };
+                                CatVec.push_back(newCat);
+                                iFound = (int)CatVec.size() - 1;
                             }
+                            CatVec[iFound].Functions.push_back(tFunc);                                     //    Add function to its category
                             p_function = p_function->NextSiblingElement("function");                       //    Get the next function
                         }                                                                                  // Until there are no more functions in the file
                     }                                                                                   // ENDIF isXML?
