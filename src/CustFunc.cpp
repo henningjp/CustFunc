@@ -401,6 +401,36 @@ int SendFunction2Mathcad(HWND mcad, int iC, int iF)
 }
 
 /*******************************************************************************************************/
+/*   Custom Function Dialog Thread                                                                     */
+/*                                                                                                     */
+/*   The low-level keyboard hook callback must return quickly (Windows silently removes hooks that     */
+/*   take too long), so the F3 handler starts this thread and returns immediately.  The thread pops    */
+/*   the dialog, then sends the selected function to Mathcad.  gDialogOpen prevents a second dialog    */
+/*   from being started (e.g. by F3 auto-repeat) while one is already open.                            */
+/*******************************************************************************************************/
+static volatile LONG gDialogOpen = 0;
+
+static DWORD WINAPI DialogThreadProc(LPVOID param)
+{
+    HWND hwnd = (HWND)param;                                          // Mathcad window that was active on F3
+
+    if (CatVec.size() > 0)                                            // If there are XML files loaded in CatVec,
+    {
+        // Pop Custom Function Dialog Box here.
+        DialogBox(hDLLglobal, MAKEINTRESOURCE(IDD_CFDIALOG), hwnd, CFDlgProc);
+        // Get function string index set by DialogBox and SendInput to Mathcad window
+        if (SendFunction)                                             // If user pressed Insert button
+            SendFunction2Mathcad(hwnd, iCategory, iFunction);         //    Send selected string to Mathcad
+    }
+    else
+        MessageBox(hwnd, L"There are no Custom Function XML files loaded.", L"Custom Function Panel", 0);
+
+    SendFunction = false;                                             // Reset SendFunction flag
+    InterlockedExchange(&gDialogOpen, 0);                             // Allow F3 to open the dialog again
+    return 0;
+}
+
+/*******************************************************************************************************/
 /*   Low-Level Keyboard Hook Call Back Process.                                                        */
 /*                                                                                                     */
 /*   Trap <Shift><F2> key pressed, but only if the "PTC Mathcad Prime*" window is active.              */
@@ -436,17 +466,15 @@ LRESULT CALLBACK LowLevelKeyboardProc(int nCode, WPARAM wParam, LPARAM lParam)
                 // Check if F3 pressed; gets shift key state on the fly.
                 if (hookStruct->vkCode == VK_F3) {    // && (GetKeyState(VK_SHIFT) & SHIFTED) <== Switch from <Shift>F2 to F3
 
-                    if (CatVec.size() > 0)       // If there are XML files loaded in CatVec,
+                    // Don't block the hook: run the dialog on its own thread and return right away.
+                    if (InterlockedCompareExchange(&gDialogOpen, 1, 0) == 0)      // Only if a dialog is not already open
                     {
-                        // Pop Custom Function Dialog Box here.
-                        DialogBox(hDLLglobal, MAKEINTRESOURCE(IDD_CFDIALOG), hwnd, CFDlgProc);
-                        //Get function string index set by DialogBox and SendInput to Mathcad window
-                        if (SendFunction)                                                // If user pressed Insert button
-                            int ierr = SendFunction2Mathcad(hwnd, iCategory, iFunction); //    Send selected string to Mathcad
+                        HANDLE hThread = CreateThread(NULL, 0, DialogThreadProc, (LPVOID)hwnd, 0, NULL);
+                        if (hThread != NULL)
+                            CloseHandle(hThread);                                 // We don't need to wait for it
+                        else
+                            InterlockedExchange(&gDialogOpen, 0);                 // Thread not created; allow another try
                     }
-                    else
-                        MessageBox(hwndDlg, L"There are no Custom Function XML files loaded.", L"Custom Function Panel", 0);
-                    SendFunction = false;                                     // Reset SendFunction flag
                 }   // Do not return. the <F2> key might be for someone else.
 
                 // Check if <Ctrl><Shift>">" was pressed to insert "°F" at Mathcad Cursor Location
