@@ -921,17 +921,23 @@ BOOL LoadDocs()    // Get DLL directory and the \docs directory underneath it
 
                             if (tFunc.LocalName != L"INCLUDE")                                             // Check quotes in <params>
                             {
+                                std::wstring origName = tFunc.LocalName;
                                 std::wstring origParams = tFunc.Params;
+                                // '^' is the internal INCLUDE marker; it never belongs in a function name or parameter list
+                                bool caretFixed = (tFunc.LocalName.find(L'^') != std::wstring::npos) || (tFunc.Params.find(L'^') != std::wstring::npos);
+                                tFunc.LocalName.erase(std::remove(tFunc.LocalName.begin(), tFunc.LocalName.end(), L'^'), tFunc.LocalName.end());
+                                tFunc.Params.erase(std::remove(tFunc.Params.begin(), tFunc.Params.end(), L'^'), tFunc.Params.end());
                                 bool singleFixed = (tFunc.Params.find(L'\'') != std::wstring::npos);       // Single quotes (e.g. from Python examples)?
                                 std::replace(tFunc.Params.begin(), tFunc.Params.end(), L'\'', L'"');       // Mathcad strings need double quotes
                                 int qfix = FixParamQuotes(tFunc.Params);
-                                if (singleFixed || qfix != 0)
+                                if (caretFixed || singleFixed || qfix != 0)
                                 {
-                                    std::wstring qmsg = L"Function \"" + tFunc.Name + L"\" in \"" + entry.path().filename().wstring() + L"\" has a problem in its parameters:\n\n" + origParams + L"\n\n";
+                                    std::wstring qmsg = L"Function \"" + tFunc.Name + L"\" in \"" + entry.path().filename().wstring() + L"\" has a problem in its name or parameters:\n\n" + origName + L"(" + origParams + L")\n\n";
+                                    if (caretFixed)  qmsg += L"A '^' character was removed.\n";
                                     if (singleFixed) qmsg += L"Single quotes were replaced with double quotes.\n";
                                     if (qfix == 1)   qmsg += L"A missing matching double quote was added.\n";
                                     if (qfix == 2)   qmsg += L"A double quote is misplaced or there are too many. This function was NOT loaded.\n\nPlease correct the XML file.";
-                                    else             qmsg += L"\nParameters used:\n\n" + tFunc.Params + L"\n\nPlease correct the XML file.";
+                                    else             qmsg += L"\nUsed:\n\n" + tFunc.LocalName + L"(" + tFunc.Params + L")\n\nPlease correct the XML file.";
                                     MessageBox(hwndDlg, qmsg.c_str(), L"Custom Function XML Warning", MB_ICONWARNING);
                                     if (qfix == 2)                                                           // Cannot repair: skip this function
                                     {
