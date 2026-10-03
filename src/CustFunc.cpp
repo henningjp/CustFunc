@@ -704,9 +704,9 @@ bool isXML(const fs::path& p)
 /*   XML Error Utility Function                                                                        */
 /*   Pops a MessageBox with the Error Message from TinyXLM2 as set in the enumeration XMLError         */
 /*******************************************************************************************************/
-void PopXMLError(tinyxml2::XMLError errnum)
+void PopXMLError(tinyxml2::XMLError errnum, const std::wstring& fileName)
 {
-    std::wstring errmsg = L"XML File Error: ";
+    std::wstring errmsg = L"XML File Error in \"" + fileName + L"\": ";
     switch (errnum)
     {
     case tinyxml2::XML_SUCCESS: errmsg.append(L"No Error"); break;
@@ -822,9 +822,14 @@ BOOL LoadDocs()    // Get DLL directory and the \docs directory underneath it
                     {
                         tinyxml2::XMLError eResult = doc.LoadFile( entry.path().string().c_str());         // Load the XML File into XMLDocument
                         if (eResult != tinyxml2::XML_SUCCESS)
-                            PopXMLError(eResult);                                                          //   Pop an Error Message if not successful
+                        {
+                            PopXMLError(eResult, entry.path().filename().wstring());                                                          //   Pop an Error Message if not successful
+                            continue;                                                                      //   and skip this file
+                        }
 
                         tinyxml2::XMLElement* p_root_element = doc.RootElement();                          // This should be the <FUNCTIONS> Tag
+                        if (p_root_element == NULL)                                                        // Empty file: nothing to read
+                            continue;
                         tinyxml2::XMLElement* p_function = p_root_element->FirstChildElement("function");  // First <function> Tag
 
                         while (p_function)                                                                 // While <function> Tag valid
