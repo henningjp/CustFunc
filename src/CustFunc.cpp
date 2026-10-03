@@ -455,13 +455,13 @@ LRESULT CALLBACK LowLevelKeyboardProc(int nCode, WPARAM wParam, LPARAM lParam)
                 }   // Do not return. the <F2> key might be for someone else.
 
                 // Check if <Ctrl><Shift>">" was pressed to insert "°F" at Mathcad Cursor Location
-                if (hookStruct->vkCode == VK_OEM_PERIOD && (GetKeyState(VK_SHIFT) & SHIFTED) && (GetKeyState(VK_CONTROL) & SHIFTED))
+                if (hookStruct->vkCode == VK_OEM_PERIOD && (GetAsyncKeyState(VK_SHIFT) & SHIFTED) && (GetAsyncKeyState(VK_CONTROL) & SHIFTED))
                 {
                     SendAffine(L'F');      // Send keystrokes for °F with unit label
                     return 1;
                 }
                 // Check if <Ctrl><Shift>"<" was pressed to insert "°C" at Mathcad Cursor Location
-                if (hookStruct->vkCode == VK_OEM_COMMA && (GetKeyState(VK_SHIFT) & SHIFTED) && (GetKeyState(VK_CONTROL) & SHIFTED))
+                if (hookStruct->vkCode == VK_OEM_COMMA && (GetAsyncKeyState(VK_SHIFT) & SHIFTED) && (GetAsyncKeyState(VK_CONTROL) & SHIFTED))
                 {
                     SendAffine(L'C');      // Send keystrokes for °C with unit label
                     return 1;
