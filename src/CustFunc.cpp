@@ -410,22 +410,15 @@ LRESULT CALLBACK LowLevelKeyboardProc(int nCode, WPARAM wParam, LPARAM lParam)
         PKBDLLHOOKSTRUCT hookStruct = (PKBDLLHOOKSTRUCT) lParam;
 
         // A bit of code here to make sure that Mathcad Prime is the active window; Ignore keyboard otherwise.
-        wchar_t * wnd_title = nullptr;                           // Default to empty window title
-        wchar_t * ptcFound = NULL;                               // Default to PTC Mathcad not active
+        bool ptcFound = false;                                   // Default to PTC Mathcad not active
         HWND hwnd = GetForegroundWindow();                       // get handle of currently active window
-        DWORD cTextLen = GetWindowTextLength(hwnd);              // get length of window title string
+        int cTextLen = GetWindowTextLength(hwnd);                // get length of window title string
         if (cTextLen > 0)
         {
-            cTextLen++;                                          // Add one for null terminator, just in case
-            // Allocate memory for the string and compy the string into memory
-            wnd_title = (PWSTR)VirtualAlloc((LPVOID)NULL, cTextLen, MEM_COMMIT, PAGE_READWRITE);
-            if (wnd_title != NULL)                               // IF wnd_title not null,
-            {
-                GetWindowText(hwnd, wnd_title, cTextLen);        //         get title of the window: was size sizeof(wnd_title)
-                ptcFound = std::wcsstr(wnd_title, L"PTC Mathcad Prime"); // See if active window starts with "PTC Mathcad Prime"
-            }
-            else
-                wnd_title = L"<no title>";                       // otherwise, set to "<no title>"
+            // Buffer is freed automatically on scope exit; size is in characters, +1 for null terminator
+            std::vector<wchar_t> wnd_title((size_t)cTextLen + 1, L'\0');
+            if (GetWindowText(hwnd, wnd_title.data(), cTextLen + 1) > 0)
+                ptcFound = (std::wcsstr(wnd_title.data(), L"PTC Mathcad Prime") != NULL);  // See if title contains "PTC Mathcad Prime"
         }
         if (ptcFound)                                            // If yes (not NULL)...
         {
